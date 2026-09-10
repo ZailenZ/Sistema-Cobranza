@@ -1,0 +1,6 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
+
+:root {
+  --app-font-sans: "Manrope", "Segoe UI", sans-serif;
+  --app-font-mono: "IBM Plex Mono", "SFMono-Regular", monospace;
+}
