@@ -13,12 +13,24 @@ npm run dev  # servidor de desarrollo
 npm run build  # build de producción (dist/)
 ```
 
-## Acceso y roles (modo demo)
+## Acceso y perfiles (modo demo)
 
 El rol está **fijo por usuario**. El selector de perfil del encabezado es solo una
-ayuda de navegación del prototipo (**modo demo**) para recorrer todos los módulos:
-Administrador (todo), Gerencial, Operativo y Técnico. El menú lateral se filtra
-según el rol activo.
+ayuda de navegación del prototipo (**modo demo**) para recorrer todos los módulos.
+El menú lateral se filtra según el perfil activo. Perfiles disponibles:
+
+- **Administrador:** acceso total (solo para recorrer el prototipo en modo demo).
+- **Gestor de seguridad:** módulo Seguridad — permisos de usuarios, módulos y
+  roles (perfiles y permisos, gestión de usuarios).
+- **Gerente:** acceso al módulo Gerencial completo (dashboard, mantenimiento de
+  parámetros y consultas).
+- **Sponsor:** Operativo en **modo autoservicio** — el sponsor es la empresa/
+  entidad acreedora que encarga su cartera de morosos al sistema. Este perfil
+  solo reserva y gestiona tickets de **su propia cartera**; no debe confundirse
+  con "operario/operador" (catálogo de personal interno asignable a tickets, no
+  un perfil de acceso).
+- **Técnico:** módulo Técnico — el que va tocando sobre la base de datos: Monitor
+  Batch, mantenimiento de BD y backup.
 
 ## Estructura de módulos
 
@@ -26,25 +38,59 @@ según el rol activo.
   permisos, Gestión de usuarios.
 - **Gerencial:**
   - Dashboard con indicadores generales de cartera y recuperación.
-  - Mantenimiento de parámetros: Catálogo de servicio, Catálogo de canales,
-    Catálogo de operarios, Catálogo de plantillas (con estados vacío/lista/edición
-    y las seis acciones: listar, buscar, ver detalle, agregar, modificar, eliminar).
+  - Mantenimiento de parámetros:
+    - **Catálogo de servicio** (tipos de cobranza): rango de mora/saldo que define
+      la clasificación, y los canales que usa con su frecuencia (cuántos mensajes
+      al día por cada canal).
+    - **Catálogo de canales**: medio de contacto y su naturaleza (digital/físico).
+    - **Catálogo de plantillas**: el tipo de mensaje (Amistoso, Recordatorio,
+      Aviso formal, Advertencia, Ultimátum, Carta notarial) y su texto real.
+    - **Catálogo de estrategias**: cómo se hostiga a un moroso — canal(es) + tipo
+      de mensaje + duración + tarifa, asociado a un tipo de cobranza.
+    - **Catálogo de autómata**: el robot que envía por cada canal y su capacidad.
+    Cada uno con estados vacío/lista/edición y las seis acciones: listar, buscar,
+    ver detalle, agregar, modificar, eliminar. Cada catálogo incluye un registro de
+    ejemplo desactivado, para mostrar que se puede dar de baja sin eliminarlo.
   - Consultas: Sponsors, Morosos, Indicadores KPI — cada una con filtros, KPIs,
     gráfica, tabla y exportación.
-- **Operativo (Data-Entry):** Dashboard, y el flujo **Reservar tickets → Entrega
-  cobranza**.
+- **Operativo — flujo de autoservicio del Sponsor:**
+  1. **Dashboard**: bienvenida y vistazo del flujo completo (4 pasos), con los
+     tipos de cobranza del sistema como referencia informativa.
+  2. **Reservar tickets**: el sponsor **sube su lista de morosos directamente**
+     (simulado: dos dropzones — archivo morosos y archivo deuda — sin
+     procesamiento real de archivo). El sponsor **no elige** el tipo de cobranza:
+     al confirmar, el sistema clasifica automáticamente a cada moroso según su
+     información (días de mora) y le asigna su tipo de cobranza. Luego, por cada
+     moroso, el sponsor **elige la estrategia de hostigamiento** a aplicar de entre
+     las disponibles para ese tipo de cobranza (con su canal, tipo de mensaje,
+     duración y tarifa); al aplicarla se ejecuta la gestión y se acumula el costo.
+     El sistema **recomienda** una estrategia según los días de mora y el saldo del
+     moroso y la deja preseleccionada, pero la decisión final es del sponsor.
+  3. **Entrega cobranza**: reporte de las gestiones automáticas enviadas (canal,
+     operador/autómata, plantilla) y su respuesta (afirmativa/negativa/sin
+     respuesta), con detalle por moroso y el mensaje exacto enviado.
+  Un usuario Sponsor solo ve su propia cartera; el Administrador ve la cola
+  interna completa (comportamiento previo, sin el flujo de autoservicio).
 - **Reportes operativos (solo ver/imprimir/descargar):** Reporte de gestión de
-  deudas.
-- **Técnico / Administrativo (restringido, fuera del flujo operativo):** Monitor
-  Batch Aplicativo (solo lectura), Mantenimiento de BD, Backup.
+  deudas — consolidado final de la cartera del sponsor, con búsqueda, paginación
+  y detalle por moroso.
+- **Técnico (restringido, fuera del flujo operativo):** Monitor Batch Aplicativo
+  (solo lectura), Mantenimiento de BD, Backup.
 
 ## Decisiones de diseño relevantes
 
 - **Batch** no es un flujo del usuario: fabrica los tickets de gestión de
   cobranza a partir de deudas vencidas, y solo se refleja como monitor técnico
   de solo lectura (Monitor Batch Aplicativo).
-- El ticket de gestión tiene tres estados: **DI** (disponible, fabricado por
-  Batch) → **RE** (reservado por un gestor en "Reservar tickets") → **CE**
-  (cerrado tras registrar el resultado en "Entrega cobranza").
-- La confirmación de pago ocurre en **Entrega cobranza**; el reporte de gestión
-  de deudas es solo un documento de consulta, no una transacción.
+- El ticket de gestión tiene tres estados: **DI** (moroso clasificado, aún sin
+  estrategia asignada) → **RE** (con estrategia aplicada y gestión enviada) →
+  **CE** (cerrado).
+- No existe un "catálogo de operarios": los operadores del sistema son los
+  **autómatas**, no personas.
+- El prototipo **arranca vacío**: solo se siembran los catálogos y las empresas
+  sponsor. No hay morosos, deudas ni gestiones de ejemplo — todo nace de que el
+  sponsor suba su lista de morosos.
+- **Entrega cobranza** ya no es un formulario manual: es un reporte de solo
+  lectura de los envíos automáticos de cobranza (SMS/WhatsApp/correo/carta) y
+  la respuesta simulada del moroso. El reporte de gestión de deudas es el
+  consolidado final; ninguna de las dos pantallas registra transacciones.

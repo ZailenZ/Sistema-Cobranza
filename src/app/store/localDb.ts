@@ -1,8 +1,53 @@
-export type CatalogId = "servicios" | "canales" | "operarios" | "plantillas";
+export type CatalogId = "servicios" | "canales" | "estrategias" | "plantillas" | "automata";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
 const STORAGE_PREFIX = "swcobranza:";
+
+// Sube este número cada vez que cambie la forma de un catálogo o entidad
+// simulada (nuevos campos, renombrados, etc.). Los datos ya guardados en el
+// navegador de un usuario que abrió una versión anterior del prototipo nunca
+// se migran solos; sin este chequeo, una pantalla nueva que espere un campo
+// que no existía (p. ej. Servicio.saldoMin) rompe al leer datos con la forma vieja.
+const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION_KEY = `${STORAGE_PREFIX}schemaVersion`;
+
+/** Si el esquema de catálogos/entidades cambió, limpia los datos simulados persistidos
+ *  (no la sesión) para que se vuelvan a sembrar con la forma actual. Llamar una vez al
+ *  iniciar la app, antes de `seedAllIfEmpty()`. */
+export function resetIfSchemaChanged() {
+  try {
+    if (localStorage.getItem(SCHEMA_VERSION_KEY) === String(SCHEMA_VERSION)) return;
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith(`${STORAGE_PREFIX}catalog:`) || key.startsWith(`${STORAGE_PREFIX}tx:`))) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem(SCHEMA_VERSION_KEY, String(SCHEMA_VERSION));
+  } catch {
+    /* noop */
+  }
+}
+
+/** Resetea el prototipo por completo: borra TODOS los datos simulados (catálogos, sponsors,
+ *  deudores, deudas, tickets, envíos) y la sesión (rol activo), para volver a la forma base
+ *  recién sembrada. Pensado para el botón "Resetear prototipo" del Administrador — el llamador
+ *  debe recargar la página después para que todo se vuelva a sembrar desde cero. */
+export function resetPrototipo() {
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(STORAGE_PREFIX)) keysToRemove.push(key);
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  } catch {
+    /* noop */
+  }
+}
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -85,17 +130,16 @@ export type Deuda = {
   createdAt: string;
 };
 
-// --- Ticket de gestión de cobranza (caso asignable) ---
-// DI: disponible (fabricado por Batch, sin asignar) | RE: reservado (asignado a un operario) | CE: cerrado
+// --- Ticket de gestión de cobranza (un moroso clasificado, listo para hostigar) ---
+// DI: clasificado, aún sin estrategia asignada | RE: con estrategia asignada y gestión enviada | CE: cerrado
 export type TicketGestion = {
   id: string;
   codigo: string;
   deudaId: string;
   deudorId: string;
-  canalId?: string; // catálogo canales
-  prioridad: "Alta" | "Media" | "Baja";
   estado: "DI" | "RE" | "CE";
-  operarioId?: string; // catálogo operarios
+  /** Estrategia de hostigamiento que el sponsor eligió para este moroso (catálogo de estrategias). */
+  estrategiaCodigo?: string;
   fechaAsignacion?: string;
   createdAt: string;
 };
@@ -110,20 +154,27 @@ export type MovimientoTicket = {
   createdAt: string;
 };
 
-// --- Gestión de cobranza ("Entrega cobranza"): registro de contacto/pago sobre un ticket reservado ---
-export type GestionCobranza = {
+// --- Envío de cobranza: la ejecución de la estrategia que el sponsor eligió para un moroso.
+// El sistema simula haber enviado el mensaje por el/los canal(es) de la estrategia y registra la
+// respuesta del moroso. Es lo que el Sponsor monitorea en "Entrega cobranza" y en el
+// "Reporte de gestión de deudas" — el sponsor no llama ni escribe manualmente. ---
+export type RespuestaEnvio = "Afirmativa" | "Negativa" | "Sin respuesta";
+
+export type EnvioCobranza = {
   id: string;
   codigo: string;
   ticketId: string;
   deudaId: string;
-  operarioId?: string;
-  canalId?: string;
-  tipoContacto: "Llamada" | "Visita" | "Mensaje" | "Correo";
-  resultado: "Contactado" | "Promesa de Pago" | "Pago Realizado" | "Sin Contacto" | "Rechazo";
-  montoComprometido?: number;
-  montoPagado?: number;
-  fechaCompromiso?: string;
-  observaciones?: string;
+  deudorId: string;
+  estrategiaCodigo: string; // catálogo estrategias
+  canalIds: string[]; // canales de la estrategia (catálogo canales)
+  automataCodigo?: string; // catálogo automata (vacío si ningún canal tiene autómata)
+  operador: string; // etiqueta simulada del autómata que envió, p. ej. "SMS1"
+  plantillaCodigo?: string; // tipo de mensaje enviado (catálogo plantillas)
+  tarifa: number; // costo cobrado al sponsor por ejecutar la estrategia
+  respuesta: RespuestaEnvio;
+  fechaEnvio: string; // yyyy-mm-dd
+  horaEnvio: string; // HH:mm:ss
   createdAt: string;
 };
 
@@ -178,15 +229,15 @@ export function addMovimientoTicket(m: MovimientoTicket) {
   return next;
 }
 
-export function getGestionesCobranza(): GestionCobranza[] {
-  return readJson<GestionCobranza[]>(txKey("gestionesCobranza"), []);
+export function getEnviosCobranza(): EnvioCobranza[] {
+  return readJson<EnvioCobranza[]>(txKey("enviosCobranza"), []);
 }
-export function setGestionesCobranza(items: GestionCobranza[]) {
-  writeJson(txKey("gestionesCobranza"), items as unknown as Json);
+export function setEnviosCobranza(items: EnvioCobranza[]) {
+  writeJson(txKey("enviosCobranza"), items as unknown as Json);
 }
-export function addGestionCobranza(g: GestionCobranza) {
-  const next = [...getGestionesCobranza(), g];
-  setGestionesCobranza(next);
+export function addEnviosCobranza(items: EnvioCobranza[]) {
+  const next = [...getEnviosCobranza(), ...items];
+  setEnviosCobranza(next);
   return next;
 }
 

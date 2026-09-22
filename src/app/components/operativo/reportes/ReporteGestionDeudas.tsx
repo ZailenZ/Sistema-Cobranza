@@ -1,23 +1,35 @@
-import { useMemo } from "react";
-import { Download, Printer } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Download, Eye, Printer } from "lucide-react";
 
+import { DataTable } from "../../shared/DataTable";
 import {
+  getCatalog,
   getDeudas,
   getDeudores,
-  getGestionesCobranza,
+  getEnviosCobranza,
   getSponsors,
   getTicketsGestion,
+  type EnvioCobranza,
+  type TicketGestion,
 } from "../../../store/localDb";
 import { seedAllIfEmpty } from "../../../store/seedAll";
+import {
+  formatListaCanales,
+  type CanalContacto,
+  type EstrategiaCobranza,
+  type PlantillaMensaje,
+  type ServicioCobranza,
+} from "../../../store/catalogSeed";
+import { getCurrentUser } from "../../../store/session";
+import { EnvioDetalleModal, type EnvioDetalleData } from "../EnvioDetalleModal";
 
 const fmtSol = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
 
-const estadoDeudaBadge = (estado: string) => {
+const estadoCobranzaBadge = (estado: string) => {
   const map: Record<string, string> = {
-    Pendiente: "bg-muted text-foreground",
-    Vencida: "bg-amber-100 text-amber-700",
-    Pagada: "bg-emerald-100 text-emerald-700",
-    Incobrable: "bg-rose-100 text-rose-700",
+    "Sin estrategia": "bg-sky-50 text-sky-700 border border-sky-200",
+    "En gestión": "bg-amber-50 text-amber-700 border border-amber-200",
+    Finalizado: "bg-emerald-50 text-emerald-700 border border-emerald-200",
   };
   return (
     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${map[estado] || ""} print:bg-transparent print:border print:border-black print:text-black`}>
@@ -26,143 +38,203 @@ const estadoDeudaBadge = (estado: string) => {
   );
 };
 
+const respuestaBadge = (r: EnvioCobranza["respuesta"]) => {
+  const map: Record<EnvioCobranza["respuesta"], string> = {
+    Afirmativa: "bg-emerald-100 text-emerald-700",
+    Negativa: "bg-rose-100 text-rose-700",
+    "Sin respuesta": "bg-muted text-muted-foreground",
+  };
+  return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${map[r]}`}>{r}</span>;
+};
+
+const estadoCobranzaDe = (ticket: TicketGestion | undefined) => {
+  if (!ticket) return "Sin estrategia";
+  if (ticket.estado === "CE") return "Finalizado";
+  if (ticket.estado === "RE") return "En gestión";
+  return "Sin estrategia";
+};
+
 // REP — Reporte de gestión de deudas. Documento operativo de solo lectura:
-// no registra transacciones, consolida el estado de la cartera asignada a cobranza.
+// consolida el estado final de la cartera de morosos del sponsor (o de todos, para Administrador).
 export function ReporteGestionDeudas() {
   seedAllIfEmpty();
+  const user = getCurrentUser();
 
   const deudas = useMemo(() => getDeudas(), []);
   const deudores = useMemo(() => getDeudores(), []);
   const sponsors = useMemo(() => getSponsors(), []);
   const tickets = useMemo(() => getTicketsGestion(), []);
-  const gestiones = useMemo(() => getGestionesCobranza(), []);
+  const envios = useMemo(() => getEnviosCobranza(), []);
+  const canales = useMemo(() => getCatalog<CanalContacto>("canales", []), []);
+  const plantillas = useMemo(() => getCatalog<PlantillaMensaje>("plantillas", []), []);
+  const servicios = useMemo(() => getCatalog<ServicioCobranza>("servicios", []), []);
+  const estrategias = useMemo(() => getCatalog<EstrategiaCobranza>("estrategias", []), []);
+
+  const [detalle, setDetalle] = useState<EnvioDetalleData | null>(null);
 
   const deudorOf = (id: string) => deudores.find((d) => d.id === id);
-  const sponsorOf = (id: string) => sponsors.find((s) => s.id === id);
   const ticketOf = (deudaId: string) => tickets.find((t) => t.deudaId === deudaId);
-  const ultimaGestion = (deudaId: string) => {
-    const relacionadas = gestiones.filter((g) => g.deudaId === deudaId);
-    return relacionadas[relacionadas.length - 1] || null;
-  };
+  const envioOf = (deudaId: string) => envios.find((e) => e.deudaId === deudaId);
+  const estrategiaDe = (codigo?: string) => estrategias.find((e) => e.codigo === codigo);
+  const plantillaNombre = (codigo?: string) => plantillas.find((p) => p.codigo === codigo)?.nombre || "—";
+  const plantillaMensaje = (codigo?: string) => plantillas.find((p) => p.codigo === codigo)?.mensaje;
+
+  const misSponsor = user.rol === "Sponsor" ? sponsors.find((s) => s.codigo === user.sponsorCodigo) : undefined;
+  const misDeudas = deudas.filter((d) => !misSponsor || d.sponsorId === misSponsor.id);
 
   const totales = useMemo(() => {
-    const totalDeuda = deudas.reduce((s, d) => s + d.monto, 0);
-    const totalSaldo = deudas.reduce((s, d) => s + d.saldo, 0);
+    const totalDeuda = misDeudas.reduce((s, d) => s + d.monto, 0);
+    const totalSaldo = misDeudas.reduce((s, d) => s + d.saldo, 0);
     const totalRecuperado = totalDeuda - totalSaldo;
-    return { totalDeuda, totalSaldo, totalRecuperado, cantidad: deudas.length };
-  }, [deudas]);
+    return { totalDeuda, totalSaldo, totalRecuperado, cantidad: misDeudas.length };
+  }, [misDeudas]);
+
+  const abrirDetalle = (deudaId: string) => {
+    const deuda = misDeudas.find((d) => d.id === deudaId);
+    const envio = envioOf(deudaId);
+    const deudor = deudorOf(deuda?.deudorId || "");
+    const servicio = servicios.find((s) => s.codigo === deuda?.servicioCodigo);
+    const sponsor = sponsors.find((s) => s.id === deuda?.sponsorId);
+    if (!deuda || !deudor || !envio) return;
+    const estrategia = estrategiaDe(envio.estrategiaCodigo);
+    setDetalle({
+      envio,
+      deudorNombre: deudor.nombre,
+      canalesTexto: formatListaCanales(envio.canalIds, canales),
+      estrategiaTexto: estrategia ? `${estrategia.codigo} · ${estrategia.nombre}` : envio.estrategiaCodigo || "—",
+      plantillaNombre: plantillaNombre(envio.plantillaCodigo),
+      plantillaMensaje: plantillaMensaje(envio.plantillaCodigo),
+      tipoCobranza: servicio?.tipoCobranza || "—",
+      sponsorNombre: sponsor?.razonSocial || "—",
+      saldo: deuda.saldo,
+      diasMora: deuda.diasMora,
+      telefono: deudor.telefono,
+    });
+  };
 
   return (
-    <div className="min-h-screen bg-muted p-8">
-      <div className="max-w-5xl mx-auto mb-4 flex items-center justify-between print:hidden">
-        <h1 className="text-2xl font-bold text-foreground">Reporte de Gestión de Deudas</h1>
-        <div className="flex gap-3">
-          <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 text-foreground bg-card border border-border rounded-lg hover:bg-muted transition-colors"
-          >
-            <Printer className="w-4 h-4" />
-            Imprimir
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors">
-            <Download className="w-4 h-4" />
-            Descargar PDF
-          </button>
+    <div className="min-h-full bg-background">
+      <div className="mx-auto max-w-6xl p-6 lg:p-8">
+        <div className="mb-4 flex items-center justify-between print:hidden">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground">Reporte de Gestión de Deudas</h1>
+            {misSponsor && (
+              <p className="mt-1 text-base text-muted-foreground">
+                Cartera de <span className="font-semibold text-foreground">{misSponsor.razonSocial}</span>
+              </p>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 text-foreground bg-card border border-border rounded-lg hover:bg-muted transition-colors"
+            >
+              <Printer className="w-4 h-4" />
+              Imprimir
+            </button>
+            <button
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 text-primary-foreground bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Download className="w-4 h-4" />
+              Descargar PDF
+            </button>
+          </div>
         </div>
+
+        <div className="grid gap-6 sm:grid-cols-3 mb-6">
+          <div className="rounded-xl border border-border bg-card p-6">
+            <p className="text-sm text-muted-foreground mb-1.5">Monto Total de Deuda</p>
+            <p className="text-2xl font-bold text-foreground">{fmtSol(totales.totalDeuda)}</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-6">
+            <p className="text-sm text-muted-foreground mb-1.5">Saldo Pendiente</p>
+            <p className="text-2xl font-bold text-amber-700">{fmtSol(totales.totalSaldo)}</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-6">
+            <p className="text-sm text-muted-foreground mb-1.5">Monto Recuperado</p>
+            <p className="text-2xl font-bold text-emerald-700">{fmtSol(totales.totalRecuperado)}</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-card p-6">
+          <DataTable
+            title={`${totales.cantidad} moroso(s) en cartera`}
+            searchPlaceholder="Buscar moroso..."
+            onExport={() => window.print()}
+            columns={[
+              {
+                key: "deudorId", label: "Moroso", sortable: true,
+                render: (d: (typeof misDeudas)[number]) => deudorOf(d.deudorId)?.nombre || d.deudorId,
+              },
+              {
+                key: "tipoCobranza", label: "Tipo de cobranza",
+                render: (d: (typeof misDeudas)[number]) =>
+                  servicios.find((s) => s.codigo === d.servicioCodigo)?.tipoCobranza || "—",
+              },
+              {
+                key: "estrategia", label: "Estrategia",
+                render: (d: (typeof misDeudas)[number]) => {
+                  const e = estrategiaDe(envioOf(d.id)?.estrategiaCodigo);
+                  return e ? `${e.codigo} · ${e.nombre}` : "—";
+                },
+              },
+              {
+                key: "canal", label: "Canal(es)",
+                render: (d: (typeof misDeudas)[number]) => {
+                  const envio = envioOf(d.id);
+                  return envio ? formatListaCanales(envio.canalIds, canales) : "—";
+                },
+              },
+              {
+                key: "estadoCobranza", label: "Estado Cobranza",
+                render: (d: (typeof misDeudas)[number]) => estadoCobranzaBadge(estadoCobranzaDe(ticketOf(d.id))),
+              },
+              {
+                key: "fecha", label: "Fecha", sortable: true,
+                render: (d: (typeof misDeudas)[number]) => envioOf(d.id)?.fechaEnvio || "—",
+              },
+              {
+                key: "hora", label: "Hora envío",
+                render: (d: (typeof misDeudas)[number]) => envioOf(d.id)?.horaEnvio || "—",
+              },
+              {
+                key: "tarifa", label: "Tarifa",
+                render: (d: (typeof misDeudas)[number]) => {
+                  const envio = envioOf(d.id);
+                  return envio ? `S/ ${Number(envio.tarifa).toLocaleString("es-PE")}` : "—";
+                },
+              },
+              {
+                key: "respuesta", label: "Respuesta",
+                render: (d: (typeof misDeudas)[number]) => (envioOf(d.id) ? respuestaBadge(envioOf(d.id)!.respuesta) : "—"),
+              },
+              {
+                key: "__detalle", label: "Detalle",
+                render: (d: (typeof misDeudas)[number]) =>
+                  envioOf(d.id) ? (
+                    <button
+                      onClick={() => abrirDetalle(d.id)}
+                      className="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      <Eye className="size-3.5" />
+                      Ver más
+                    </button>
+                  ) : (
+                    "—"
+                  ),
+              },
+            ]}
+            data={misDeudas}
+          />
+        </div>
+
+        <p className="mt-6 text-center text-xs text-muted-foreground print:hidden">
+          Este reporte consolida el estado de la cartera de cobranza del sponsor. No representa una nueva transacción.
+        </p>
       </div>
 
-      <div className="max-w-5xl mx-auto bg-card shadow-lg print:shadow-none">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground p-8 print:bg-none print:text-black print:border-b-2 print:border-black">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2 print:text-black">REPORTE DE GESTIÓN DE DEUDAS</h1>
-              <p className="text-lg print:text-black">Sistema de Cobranza</p>
-              <p className="text-sm mt-1 print:text-black">Documento de solo consulta — no registra transacciones</p>
-            </div>
-            <div className="text-right">
-              <p className="text-sm mt-2 print:text-black">Fecha de emisión: 01/07/2026</p>
-              <p className="text-sm print:text-black">{totales.cantidad} deuda(s) reportadas</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-8">
-          {/* Resumen */}
-          <div className="mb-8">
-            <h2 className="text-sm font-bold text-muted-foreground uppercase mb-4 pb-2 border-b border-border">
-              Resumen de Cartera
-            </h2>
-            <div className="grid grid-cols-3 gap-6">
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Monto Total de Deuda</p>
-                <p className="text-xl font-bold">{fmtSol(totales.totalDeuda)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Saldo Pendiente</p>
-                <p className="text-xl font-bold text-amber-700 print:text-black">{fmtSol(totales.totalSaldo)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground mb-1">Monto Recuperado</p>
-                <p className="text-xl font-bold text-emerald-700 print:text-black">{fmtSol(totales.totalRecuperado)}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Detalle de deudas */}
-          <div className="mb-8">
-            <h2 className="text-sm font-bold text-muted-foreground uppercase mb-4 pb-2 border-b border-border">
-              Detalle de Deudas Asignadas
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border text-left text-xs uppercase text-muted-foreground">
-                    <th className="py-2 pr-4">Código</th>
-                    <th className="py-2 pr-4">Deudor</th>
-                    <th className="py-2 pr-4">Sponsor</th>
-                    <th className="py-2 pr-4 text-right">Saldo</th>
-                    <th className="py-2 pr-4 text-right">Días Mora</th>
-                    <th className="py-2 pr-4">Ticket de Gestión</th>
-                    <th className="py-2 pr-4">Último Resultado</th>
-                    <th className="py-2">Estado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {deudas.map((d) => {
-                    const deudor = deudorOf(d.deudorId);
-                    const sponsor = sponsorOf(d.sponsorId);
-                    const ticket = ticketOf(d.id);
-                    const gestion = ultimaGestion(d.id);
-                    return (
-                      <tr key={d.id} className="border-b border-border/60">
-                        <td className="py-3 pr-4 font-medium">{d.codigo}</td>
-                        <td className="py-3 pr-4">{deudor?.nombre || d.deudorId}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">{sponsor?.razonSocial || d.sponsorId}</td>
-                        <td className="py-3 pr-4 text-right font-semibold">{fmtSol(d.saldo)}</td>
-                        <td className="py-3 pr-4 text-right">{d.diasMora}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">{ticket ? `${ticket.codigo} (${ticket.estado})` : "—"}</td>
-                        <td className="py-3 pr-4 text-muted-foreground">{gestion?.resultado || "Sin gestión"}</td>
-                        <td className="py-3">{estadoDeudaBadge(d.estado)}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-border text-center">
-            <p className="text-xs text-muted-foreground">
-              Este reporte consolida el estado de la cartera asignada a cobranza. No representa una nueva transacción.
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Área de Cobranzas: (01) 123-4567 | cobranzas@empresa.pe
-            </p>
-          </div>
-        </div>
-      </div>
+      <EnvioDetalleModal data={detalle} onClose={() => setDetalle(null)} />
     </div>
   );
 }

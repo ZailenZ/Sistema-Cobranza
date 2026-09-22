@@ -1,9 +1,20 @@
-import { Bell, Check, ChevronsUpDown, Search, Settings, User } from "lucide-react";
+import { Bell, Check, ChevronsUpDown, RotateCcw, Search, Settings, User } from "lucide-react";
 import { useLocation } from "react-router";
 
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
+import { resetPrototipo } from "../../store/localDb";
 import {
   getCurrentUser,
   MOCK_USERS,
@@ -57,6 +69,39 @@ export function Header() {
         </div>
 
         <div className="ml-6 flex items-center gap-2">
+          {role === "Administrador" && (
+            <AlertDialog>
+              {/* Sin `asChild`: el trigger ya renderiza un <button>, y envolver otro provoca
+                  el warning de refs de Radix (SlotClone) sin aportar nada. */}
+              <AlertDialogTrigger className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-destructive/30 px-3 text-sm font-medium text-destructive transition-colors hover:bg-destructive/10">
+                <RotateCcw className="size-4" />
+                Resetear prototipo
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>¿Resetear el prototipo?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esto borra todos los datos simulados (sponsors, morosos, deudas, tickets, envíos y
+                    catálogos editados) y los vuelve a sembrar desde cero, tal como al primer uso. Esta
+                    acción no se puede deshacer.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      resetPrototipo();
+                      window.location.href = window.location.pathname;
+                    }}
+                  >
+                    Sí, resetear
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
           <Button
             variant="ghost"
             size="icon"

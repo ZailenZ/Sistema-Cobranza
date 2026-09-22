@@ -27,11 +27,10 @@ import { cn } from "../ui/utils";
 
 const MODULOS = [
   { key: "seguridad", label: "Seguridad" },
-  { key: "parametros", label: "Mantenimiento de parámetros" },
-  { key: "consultas", label: "Consultas gerenciales" },
+  { key: "gerencial", label: "Gerencial (parámetros y consultas)" },
   { key: "operativo", label: "Operativo / Data-Entry" },
   { key: "reportes", label: "Reportes operativos" },
-  { key: "tecnico", label: "Técnico / Batch" },
+  { key: "tecnico", label: "Técnico (Monitor Batch / BD / Backup)" },
 ] as const;
 
 type ModuloKey = (typeof MODULOS)[number]["key"];
@@ -47,39 +46,41 @@ type Perfil = {
 
 const PERFILES_SEED: Perfil[] = [
   {
-    id: "PRF-ADM",
+    id: "PRF-000",
     nombre: "Administrador",
-    descripcion: "Seguridad, catálogos, parámetros, protocolos y control técnico.",
+    descripcion: "Acceso total al sistema. Perfil de modo demo para recorrer todos los módulos.",
     estado: "Activo",
-    modulos: ["seguridad", "parametros", "consultas", "operativo", "reportes", "tecnico"],
+    modulos: ["seguridad", "gerencial", "operativo", "reportes", "tecnico"],
     usuarios: [{ nombre: "Ana Quiroz Salcedo", documento: "DNI 40123456" }],
   },
   {
-    id: "PRF-GER",
-    nombre: "Gerencial",
-    descripcion: "Consultas, gráficas, indicadores y estadísticas de cartera. Sin transacciones operativas.",
+    id: "PRF-001",
+    nombre: "Gestor de seguridad",
+    descripcion: "Administra permisos de usuarios, módulos y roles del sistema.",
     estado: "Activo",
-    modulos: ["parametros", "consultas"],
-    usuarios: [
-      { nombre: "Carlos Mendoza Ríos", documento: "DNI 41890234" },
-      { nombre: "Patricia León Vega", documento: "DNI 42567190" },
-    ],
+    modulos: ["seguridad"],
+    usuarios: [{ nombre: "Rosa Valverde Campos", documento: "DNI 44012399" }],
   },
   {
-    id: "PRF-OPE",
-    nombre: "Operativo",
-    descripcion: "Reserva/asignación de tickets de gestión, registro de entrega de cobranza y reportes.",
+    id: "PRF-002",
+    nombre: "Gerente",
+    descripcion: "Acceso al módulo Gerencial completo: dashboard, mantenimiento de parámetros y consultas.",
+    estado: "Activo",
+    modulos: ["gerencial"],
+    usuarios: [{ nombre: "Carlos Mendoza Ríos", documento: "DNI 41890234" }],
+  },
+  {
+    id: "PRF-003",
+    nombre: "Sponsor",
+    descripcion: "Usuario base de autoservicio: reserva y gestiona tickets únicamente de su propia cartera de morosos.",
     estado: "Activo",
     modulos: ["operativo", "reportes"],
-    usuarios: [
-      { nombre: "Lucía Fernández Paz", documento: "DNI 45879632" },
-      { nombre: "Diego Salas Quispe", documento: "DNI 46012885" },
-    ],
+    usuarios: [{ nombre: "Rosa Delgado", documento: "DNI 48123456" }],
   },
   {
-    id: "PRF-TEC",
+    id: "PRF-004",
     nombre: "Técnico",
-    descripcion: "Monitoreo Batch, backup y mantenimiento de base de datos.",
+    descripcion: "El que va tocando sobre la base de datos: monitor batch, mantenimiento de BD y backup.",
     estado: "Activo",
     modulos: ["tecnico"],
     usuarios: [{ nombre: "Jorge Ramírez Soto", documento: "DNI 43567812" }],

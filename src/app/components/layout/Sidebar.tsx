@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import {
   BarChart3,
+  Bot,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -20,6 +21,7 @@ import {
   UserX,
   Users,
   Wrench,
+  Zap,
 } from "lucide-react";
 
 import { Button } from "../ui/button";
@@ -31,27 +33,25 @@ interface MenuItem {
   title: string;
   icon: React.ReactNode;
   path?: string;
+  /** Si se define, el ítem (y sus hijos) solo es visible si el rol tiene acceso a este módulo. */
+  module?: ModuleKey;
   children?: MenuItem[];
 }
 
-interface MenuBlock extends MenuItem {
-  module: ModuleKey;
-}
-
-const menuBlocks: MenuBlock[] = [
+const menuBlocks: MenuItem[] = [
   {
-    module: "seguridad",
     title: "Seguridad",
     icon: <ShieldCheck className="size-4" />,
+    module: "seguridad",
     children: [
       { title: "Perfiles y permisos", icon: <ShieldCheck className="size-4" />, path: "/seguridad/perfiles" },
       { title: "Gestión de usuarios", icon: <Users className="size-4" />, path: "/seguridad/usuarios" },
     ],
   },
   {
-    module: "gerencial",
     title: "Gerencial",
     icon: <BarChart3 className="size-4" />,
+    module: "gerencial",
     children: [
       { title: "Dashboard", icon: <LayoutDashboard className="size-4" />, path: "/gerencial/dashboard" },
       {
@@ -60,8 +60,9 @@ const menuBlocks: MenuBlock[] = [
         children: [
           { title: "Catálogo de servicio", icon: <FileText className="size-4" />, path: "/gerencial/parametros/servicios" },
           { title: "Catálogo de canales", icon: <MessageSquareText className="size-4" />, path: "/gerencial/parametros/canales" },
-          { title: "Catálogo de operarios", icon: <Users className="size-4" />, path: "/gerencial/parametros/operarios" },
           { title: "Catálogo de plantillas", icon: <FileText className="size-4" />, path: "/gerencial/parametros/plantillas" },
+          { title: "Catálogo de estrategias", icon: <Zap className="size-4" />, path: "/gerencial/parametros/estrategias" },
+          { title: "Catálogo de autómata", icon: <Bot className="size-4" />, path: "/gerencial/parametros/automata" },
         ],
       },
       {
@@ -76,9 +77,9 @@ const menuBlocks: MenuBlock[] = [
     ],
   },
   {
-    module: "operativo",
     title: "Operativo",
     icon: <HandCoins className="size-4" />,
+    module: "operativo",
     children: [
       { title: "Dashboard", icon: <LayoutDashboard className="size-4" />, path: "/operativo/dashboard" },
       {
@@ -92,24 +93,41 @@ const menuBlocks: MenuBlock[] = [
     ],
   },
   {
-    module: "reportes",
     title: "Reportes",
     icon: <FileText className="size-4" />,
+    module: "reportes",
     children: [
       { title: "Reporte de gestión de deudas", icon: <FileText className="size-4" />, path: "/operativo/reportes/gestion-deudas" },
     ],
   },
   {
+    title: "Técnico",
+    icon: <Wrench className="size-4" />,
     module: "tecnico",
-    title: "Técnico / Administrativo",
-    icon: <Database className="size-4" />,
     children: [
-      { title: "Monitor Batch", icon: <BarChart3 className="size-4" />, path: "/tecnico/batch-monitor" },
+      { title: "Monitor Batch", icon: <Database className="size-4" />, path: "/tecnico/batch-monitor" },
       { title: "Mantenimiento BD", icon: <Wrench className="size-4" />, path: "/tecnico/mantenimiento-bd" },
       { title: "Backup", icon: <HardDriveDownload className="size-4" />, path: "/tecnico/backup" },
     ],
   },
 ];
+
+// Filtra recursivamente el árbol de menú según los módulos permitidos por rol.
+// Un ítem con `module` se oculta (con toda su rama) si el rol no tiene acceso;
+// un grupo sin `module` propio se oculta si, tras filtrar, no le queda ningún hijo visible.
+function filterMenuItem(item: MenuItem, role: ReturnType<typeof useCurrentRole>): MenuItem | null {
+  if (item.module && !canAccess(item.module, role)) return null;
+
+  if (item.children) {
+    const children = item.children
+      .map((child) => filterMenuItem(child, role))
+      .filter((child): child is MenuItem => child !== null);
+    if (children.length === 0) return null;
+    return { ...item, children };
+  }
+
+  return item;
+}
 
 function containsPath(item: MenuItem, pathname: string): boolean {
   if (item.path === pathname) return true;
@@ -177,7 +195,9 @@ function MenuItemComponent({ item, level = 0 }: { item: MenuItem; level?: number
 
 export function Sidebar() {
   const role = useCurrentRole();
-  const visibleBlocks = menuBlocks.filter((block) => canAccess(block.module, role));
+  const visibleBlocks = menuBlocks
+    .map((block) => filterMenuItem(block, role))
+    .filter((block): block is MenuItem => block !== null);
 
   return (
     <aside className="hidden w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground lg:flex lg:flex-col">

@@ -7,7 +7,7 @@
     "build": "vite build",
     "dev": "vite",
     "preview": "vite preview",
-    "deploy": "npm run build && git add dist -f && git commit -m 'deploy to GitHub Pages' && git push origin $(git subtree split --prefix dist main):gh-pages --force",
+    "deploy": "npm run build && git -C dist init -q && git -C dist add -A && git -C dist -c user.email=deploy@local -c user.name=deploy commit -q -m \"deploy to GitHub Pages\" && git -C dist push -q --force https://github.com/ZailenZ/Sistema-Cobranza.git HEAD:gh-pages",
     "ui:add": "npx shadcn@latest add"
   },
   "dependencies": {

@@ -1,14 +1,30 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { PageHeader } from "../shared/PageHeader";
 import { DataTable } from "../shared/DataTable";
 import { getCatalog, setCatalog } from "../../store/localDb";
-import { ensureCatalogSeeded } from "../../store/catalogSeed";
+import {
+  AUTOMATA_SEED,
+  CANALES_SEED,
+  ESTRATEGIAS_SEED,
+  PLANTILLAS_SEED,
+  SERVICIOS_SEED,
+  ensureCatalogSeeded,
+  formatCanalesFrecuencia,
+  formatDuracion,
+  formatListaCanales,
+  type CanalContacto,
+  type CanalFrecuencia,
+  type EstrategiaCobranza,
+  type PlantillaMensaje,
+  type ServicioCobranza,
+} from "../../store/catalogSeed";
 import {
   Briefcase,
   MessageSquareText,
-  Users,
   FileText,
+  Bot,
+  Zap,
   X,
   Save,
   Plus,
@@ -19,40 +35,28 @@ import {
 } from "lucide-react";
 
 const categories = [
-  { id: "servicios",  name: "Catálogo de Servicio",   icon: Briefcase,        color: "teal" },
-  { id: "canales",    name: "Catálogo de Canales",    icon: MessageSquareText, color: "blue" },
-  { id: "operarios",  name: "Catálogo de Operarios",  icon: Users,            color: "emerald" },
-  { id: "plantillas", name: "Catálogo de Plantillas", icon: FileText,         color: "purple" },
+  { id: "servicios",   name: "Catálogo de Servicio",    icon: Briefcase,         color: "teal" },
+  { id: "canales",     name: "Catálogo de Canales",     icon: MessageSquareText, color: "blue" },
+  { id: "plantillas",  name: "Catálogo de Plantillas",  icon: FileText,          color: "purple" },
+  { id: "estrategias", name: "Catálogo de Estrategias", icon: Zap,               color: "rose" },
+  { id: "automata",    name: "Catálogo de Autómata",    icon: Bot,               color: "amber" },
 ];
 
 const estadoOptions = ["Activo", "Inactivo"];
 
-const serviciosData = [
-  { id: 1, codigo: "SRV-001", descripcion: "Cobranza Preventiva",      condicionesEspeciales: "No", estado: "Activo" },
-  { id: 2, codigo: "SRV-002", descripcion: "Cobranza Extrajudicial",   condicionesEspeciales: "No", estado: "Activo" },
-  { id: 3, codigo: "SRV-003", descripcion: "Cobranza Judicial",        condicionesEspeciales: "Sí", estado: "Activo" },
-  { id: 4, codigo: "SRV-004", descripcion: "Cobranza Castigada",       condicionesEspeciales: "Sí", estado: "Activo" },
-];
+const serviciosData = SERVICIOS_SEED;
+const canalesData = CANALES_SEED;
+const plantillasData = PLANTILLAS_SEED;
+const estrategiasData = ESTRATEGIAS_SEED;
+const automataData = AUTOMATA_SEED;
 
-const canalesData = [
-  { id: 1, codigo: "CAN-001", nombre: "Llamada telefónica",  descripcion: "Contacto vía call center",         estado: "Activo" },
-  { id: 2, codigo: "CAN-002", nombre: "SMS",                 descripcion: "Mensaje de texto automatizado",     estado: "Activo" },
-  { id: 3, codigo: "CAN-003", nombre: "Correo electrónico",  descripcion: "Envío de comunicaciones por email", estado: "Activo" },
-  { id: 4, codigo: "CAN-004", nombre: "WhatsApp",            descripcion: "Mensajería instantánea",            estado: "Activo" },
-  { id: 5, codigo: "CAN-005", nombre: "Visita domiciliaria", descripcion: "Gestión presencial en campo",       estado: "Inactivo" },
-];
-
-const operariosData = [
-  { id: 1, codigo: "OPE-001", nombre: "Gestor telefónico",   rolFuncion: "Gestor",     metaMensual: 25000, modalidadCosteo: "Sueldo Fijo", estado: "Activo" },
-  { id: 2, codigo: "OPE-002", nombre: "Gestor de campo",     rolFuncion: "Gestor",     metaMensual: 18000, modalidadCosteo: "Comisión",     estado: "Activo" },
-  { id: 3, codigo: "OPE-003", nombre: "Supervisor de cartera", rolFuncion: "Supervisor", metaMensual: 60000, modalidadCosteo: "Sueldo Fijo", estado: "Activo" },
-];
-
-const plantillasData = [
-  { id: 1, codigo: "PLT-001", canal: "SMS",                asunto: "Recordatorio de pago", cuerpo: "Estimado cliente, su deuda vence en 3 días. Regularice para evitar recargos.",   estado: "Activo" },
-  { id: 2, codigo: "PLT-002", canal: "Correo electrónico",  asunto: "Aviso de mora",         cuerpo: "Le informamos que su cuenta presenta días de atraso. Contáctenos para negociar.", estado: "Activo" },
-  { id: 3, codigo: "PLT-003", canal: "WhatsApp",            asunto: "Promesa de pago",       cuerpo: "Gracias por su compromiso de pago. Le recordaremos la fecha acordada.",           estado: "Activo" },
-];
+/** Catálogos vivos que necesitan las columnas/formularios para resolver referencias entre sí. */
+type CatalogCtx = {
+  canales: CanalContacto[];
+  plantillas: PlantillaMensaje[];
+  servicios: ServicioCobranza[];
+  estrategias: EstrategiaCobranza[];
+};
 
 const estadoBadge = (estado: string) => (
   <span
@@ -64,48 +68,105 @@ const estadoBadge = (estado: string) => (
   </span>
 );
 
+type FieldOption = string | { value: string; label: string };
+
 interface FormField {
   key: string;
   label: string;
-  type: "text" | "select" | "number" | "textarea";
-  options?: string[];
+  type: "text" | "select" | "number" | "textarea" | "canalesFrecuencia" | "multicanal";
+  options?: FieldOption[];
   allowCustom?: boolean;
   optional?: boolean;
   placeholder?: string;
+  help?: string;
 }
 
-function getCategoryColumns(cat: string): any[] {
+const optionValue = (o: FieldOption) => (typeof o === "string" ? o : o.value);
+const optionLabel = (o: FieldOption) => (typeof o === "string" ? o : o.label);
+
+/** Campos numéricos por catálogo: se convierten a número al guardar (vacío -> null si es opcional),
+ *  para que las reglas de clasificación comparen números y no texto. */
+const CAMPOS_NUMERICOS: Record<string, { key: string; nullable?: boolean }[]> = {
+  servicios: [
+    { key: "moraMin" },
+    { key: "moraMax", nullable: true },
+    { key: "saldoMin" },
+    { key: "saldoMax", nullable: true },
+  ],
+  estrategias: [{ key: "duracionDias" }, { key: "tarifa" }],
+  automata: [{ key: "capacidadMinima", nullable: true }, { key: "capacidadPorDia" }],
+};
+
+function coerceItem(category: string, data: Record<string, any>) {
+  const numericos = CAMPOS_NUMERICOS[category] || [];
+  const next = { ...data };
+  numericos.forEach(({ key, nullable }) => {
+    const raw = next[key];
+    if (raw === "" || raw === undefined || raw === null) {
+      next[key] = nullable ? null : 0;
+      return;
+    }
+    const n = Number(raw);
+    next[key] = Number.isNaN(n) ? (nullable ? null : 0) : n;
+  });
+  return next;
+}
+
+function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
   switch (cat) {
     case "servicios":
       return [
-        { key: "codigo",                label: "Código",      sortable: true },
-        { key: "descripcion",           label: "Descripción", sortable: true },
-        { key: "condicionesEspeciales", label: "Cond. Especiales" },
-        { key: "estado",                label: "Estado",      render: (i: any) => estadoBadge(i.estado) },
+        { key: "codigo",       label: "Código",           sortable: true },
+        { key: "tipoCobranza", label: "Tipo de Cobranza", sortable: true },
+        { key: "moraMin",      label: "Mora mín. (días)" },
+        { key: "moraMax",      label: "Mora máx. (días)", render: (i: any) => (i.moraMax === null || i.moraMax === "" ? "A más" : i.moraMax) },
+        { key: "saldoMin",     label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
+        { key: "saldoMax",     label: "Saldo máx. (S/)",  render: (i: any) => (i.saldoMax === null || i.saldoMax === "" ? "A más" : `S/ ${Number(i.saldoMax).toLocaleString()}`) },
+        { key: "canales",      label: "Canales y frecuencia", render: (i: any) => formatCanalesFrecuencia(i.canales, ctx.canales) },
+        {
+          key: "__estrategias", label: "Estrategias",
+          render: (i: any) => {
+            const n = ctx.estrategias.filter((e) => e.tipoCobranza === i.tipoCobranza && e.estado === "Activo").length;
+            return `${n} estrategia(s)`;
+          },
+        },
+        { key: "estado",       label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "canales":
       return [
-        { key: "codigo",      label: "Código", sortable: true },
-        { key: "nombre",      label: "Nombre", sortable: true },
-        { key: "descripcion", label: "Descripción" },
-        { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
-      ];
-    case "operarios":
-      return [
-        { key: "codigo",         label: "Código", sortable: true },
-        { key: "nombre",         label: "Nombre", sortable: true },
-        { key: "rolFuncion",     label: "Rol/Función" },
-        { key: "metaMensual",    label: "Meta Mensual (S/)", sortable: true, render: (i: any) => `S/ ${Number(i.metaMensual).toLocaleString()}` },
-        { key: "modalidadCosteo",label: "Modalidad Costeo" },
-        { key: "estado",         label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+        { key: "codigo",    label: "Código", sortable: true },
+        { key: "nombre",    label: "Canal",  sortable: true },
+        { key: "tipoCanal", label: "Tipo de Canal" },
+        { key: "estado",    label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "plantillas":
       return [
-        { key: "codigo", label: "Código", sortable: true },
-        { key: "canal",  label: "Canal" },
-        { key: "asunto", label: "Asunto", sortable: true },
-        { key: "cuerpo", label: "Cuerpo del Mensaje" },
-        { key: "estado", label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+        { key: "codigo",  label: "Código",         sortable: true },
+        { key: "nombre",  label: "Tipo de mensaje", sortable: true },
+        { key: "mensaje", label: "Mensaje", render: (i: any) => <span className="line-clamp-2 max-w-md">{i.mensaje}</span> },
+        { key: "estado",  label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+      ];
+    case "estrategias":
+      return [
+        { key: "codigo",       label: "Código",            sortable: true },
+        { key: "nombre",       label: "Estrategia",        sortable: true },
+        { key: "tipoCobranza", label: "Tipo de Cobranza",  sortable: true },
+        { key: "canalCodigos", label: "Canal(es) utilizado(s)", render: (i: any) => formatListaCanales(i.canalCodigos, ctx.canales) },
+        {
+          key: "plantillaCodigo", label: "Tipo de mensaje",
+          render: (i: any) => ctx.plantillas.find((p) => p.codigo === i.plantillaCodigo)?.nombre || "—",
+        },
+        { key: "duracionDias", label: "Duración",  render: (i: any) => formatDuracion(Number(i.duracionDias)) },
+        { key: "tarifa",       label: "Tarifa (S/)", sortable: true, render: (i: any) => `S/ ${Number(i.tarifa).toLocaleString()}` },
+        { key: "estado",       label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+      ];
+    case "automata":
+      return [
+        { key: "codigo",          label: "Código", sortable: true },
+        { key: "nombre",          label: "Autómata", sortable: true },
+        { key: "capacidadMinima", label: "Capacidad mín.", render: (i: any) => (i.capacidadMinima === null || i.capacidadMinima === "" ? "—" : Number(i.capacidadMinima).toLocaleString()) },
+        { key: "capacidadPorDia", label: "Capacidad por día", render: (i: any) => Number(i.capacidadPorDia).toLocaleString() },
+        { key: "estado",          label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     default:
       return [];
@@ -114,76 +175,202 @@ function getCategoryColumns(cat: string): any[] {
 
 function getCategoryData(cat: string): any[] {
   switch (cat) {
-    case "servicios":  return serviciosData;
-    case "canales":    return canalesData;
-    case "operarios":  return operariosData;
-    case "plantillas": return plantillasData;
-    default:           return [];
+    case "servicios":   return serviciosData;
+    case "canales":     return canalesData;
+    case "plantillas":  return plantillasData;
+    case "estrategias": return estrategiasData;
+    case "automata":    return automataData;
+    default:            return [];
   }
 }
 
-function getCategoryFormFields(cat: string): FormField[] {
+function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
+  const canalNombreOptions = ctx.canales.map((c) => c.nombre);
+  const tipoCobranzaOptions = ctx.servicios.map((s) => s.tipoCobranza);
+  const plantillaOptions: FieldOption[] = ctx.plantillas.map((p) => ({ value: p.codigo, label: p.nombre }));
+
   switch (cat) {
     case "servicios":
       return [
-        { key: "codigo",                label: "Código de Servicio",              type: "text", optional: true, placeholder: "Ej: SRV-005" },
-        { key: "descripcion",           label: "Descripción",                     type: "text", placeholder: "Ej: Cobranza Preventiva" },
-        { key: "condicionesEspeciales", label: "Requiere Condiciones Especiales", type: "select", options: ["No", "Sí"] },
-        { key: "estado",                label: "Estado",                          type: "select", options: estadoOptions },
+        { key: "codigo",       label: "Código de Servicio", type: "text",   optional: true, placeholder: "Ej: SRV-006" },
+        { key: "tipoCobranza", label: "Tipo de Cobranza",   type: "text",   placeholder: "Ej: Cobranza temprana" },
+        { key: "moraMin",      label: "Mora mínima (días)", type: "number", placeholder: "Ej: 1" },
+        { key: "moraMax",      label: "Mora máxima (días)", type: "number", optional: true, placeholder: "Vacío = a más" },
+        { key: "saldoMin",     label: "Saldo mínimo (S/)",  type: "number", placeholder: "Ej: 500" },
+        { key: "saldoMax",     label: "Saldo máximo (S/)",  type: "number", optional: true, placeholder: "Vacío = a más" },
+        {
+          key: "canales",
+          label: "Canales y frecuencia",
+          type: "canalesFrecuencia",
+          help: "Marca los canales que usa este tipo de cobranza e indica cuántos mensajes se envían al día por cada uno.",
+        },
+        { key: "descripcion",  label: "Descripción", type: "textarea", optional: true, placeholder: "Describe el criterio de gestión" },
+        { key: "estado",       label: "Estado",      type: "select", options: estadoOptions },
       ];
     case "canales":
       return [
-        { key: "codigo",      label: "Código de Canal", type: "text",   optional: true, placeholder: "Ej: CAN-006" },
-        { key: "nombre",      label: "Nombre",          type: "select", options: ["Llamada telefónica", "SMS", "Correo electrónico", "WhatsApp", "Visita domiciliaria"], allowCustom: true },
-        { key: "descripcion", label: "Descripción",     type: "textarea", optional: true, placeholder: "Describe el canal de contacto" },
-        { key: "estado",      label: "Estado",          type: "select", options: estadoOptions },
-      ];
-    case "operarios":
-      return [
-        { key: "codigo",          label: "Código de Operario",  type: "text",   optional: true, placeholder: "Ej: OPE-004" },
-        { key: "nombre",          label: "Nombre / Puesto",     type: "text",   placeholder: "Ej: Gestor telefónico" },
-        { key: "rolFuncion",      label: "Rol/Función",         type: "select", options: ["Gestor", "Supervisor"] },
-        { key: "metaMensual",     label: "Meta Mensual (S/)",   type: "number", placeholder: "Ej: 25000" },
-        { key: "modalidadCosteo", label: "Modalidad Costeo",    type: "select", options: ["Sueldo Fijo", "Comisión", "Mixto"] },
-        { key: "estado",          label: "Estado",              type: "select", options: estadoOptions },
+        { key: "codigo",    label: "Código de Canal", type: "text",   optional: true, placeholder: "Ej: CAN-007" },
+        { key: "nombre",    label: "Nombre",          type: "select", options: canalNombreOptions, allowCustom: true },
+        { key: "tipoCanal", label: "Tipo de Canal",   type: "select", options: ["Digital", "Físico"] },
+        { key: "estado",    label: "Estado",          type: "select", options: estadoOptions },
       ];
     case "plantillas":
       return [
-        { key: "codigo", label: "Código de Plantilla", type: "text",   optional: true, placeholder: "Ej: PLT-004" },
-        { key: "canal",  label: "Canal",                type: "select", options: ["Llamada telefónica", "SMS", "Correo electrónico", "WhatsApp", "Visita domiciliaria"] },
-        { key: "asunto", label: "Asunto",               type: "text",   placeholder: "Ej: Recordatorio de pago" },
-        { key: "cuerpo", label: "Cuerpo del Mensaje",   type: "textarea", placeholder: "Texto de la comunicación al deudor" },
-        { key: "estado", label: "Estado",               type: "select", options: estadoOptions },
+        { key: "codigo",  label: "Código de Plantilla", type: "text",   optional: true, placeholder: "Ej: PLT-008" },
+        { key: "nombre",  label: "Tipo de mensaje",     type: "text",   placeholder: "Ej: Amistoso, Recordatorio, Ultimátum" },
+        { key: "mensaje", label: "Mensaje",             type: "textarea", placeholder: "Texto a enviar. Usa {nombre}, {saldo}, {mora} y {sponsor}." },
+        { key: "estado",  label: "Estado",              type: "select", options: estadoOptions },
+      ];
+    case "estrategias":
+      return [
+        { key: "codigo",          label: "Código de Estrategia", type: "text",   optional: true, placeholder: "Ej: EST-13" },
+        { key: "nombre",          label: "Estrategia",           type: "text",   placeholder: "Ej: Estrategia 12" },
+        { key: "tipoCobranza",    label: "Tipo de Cobranza",     type: "select", options: tipoCobranzaOptions },
+        { key: "canalCodigos",    label: "Canal(es) utilizado(s)", type: "multicanal", help: "Una estrategia puede hostigar por varios canales a la vez." },
+        { key: "plantillaCodigo", label: "Tipo de mensaje",      type: "select", options: plantillaOptions },
+        { key: "duracionDias",    label: "Duración (días)",      type: "number", placeholder: "Ej: 1.5" },
+        { key: "tarifa",          label: "Tarifa (S/)",          type: "number", placeholder: "Ej: 5" },
+        { key: "estado",          label: "Estado",               type: "select", options: estadoOptions },
+      ];
+    case "automata":
+      return [
+        { key: "codigo",          label: "Código de Autómata",        type: "text",   optional: true, placeholder: "Ej: AUT-007" },
+        { key: "nombre",          label: "Autómata",                  type: "text",   placeholder: "Ej: Autómata de SMS" },
+        { key: "capacidadMinima", label: "Capacidad de mensaje mín.", type: "number", optional: true, placeholder: "Opcional" },
+        { key: "capacidadPorDia", label: "Capacidad de mensaje por día", type: "number", placeholder: "Ej: 2500" },
+        { key: "estado",          label: "Estado",                    type: "select", options: estadoOptions },
       ];
     default:
       return [];
   }
 }
 
+/** Texto legible de un valor para la vista de detalle (maneja los campos estructurados). */
+function formatFieldValue(field: FormField, item: any, ctx: CatalogCtx) {
+  const raw = item[field.key];
+  if (field.type === "canalesFrecuencia") return formatCanalesFrecuencia(raw, ctx.canales);
+  if (field.type === "multicanal") return formatListaCanales(raw, ctx.canales);
+  if (field.key === "plantillaCodigo") return ctx.plantillas.find((p) => p.codigo === raw)?.nombre || "—";
+  if (raw === "" || raw === undefined || raw === null) return "—";
+  return String(raw);
+}
+
+/** Editor de "canales y frecuencia": un check por canal y, si está marcado, sus mensajes por día. */
+function CanalesFrecuenciaEditor({
+  value,
+  canales,
+  onChange,
+}: {
+  value: CanalFrecuencia[];
+  canales: CanalContacto[];
+  onChange: (next: CanalFrecuencia[]) => void;
+}) {
+  const seleccionados = new Map((value || []).map((c) => [c.canalCodigo, c.vecesPorDia]));
+
+  const toggle = (codigo: string, on: boolean) => {
+    if (on) onChange([...(value || []), { canalCodigo: codigo, vecesPorDia: 1 }]);
+    else onChange((value || []).filter((c) => c.canalCodigo !== codigo));
+  };
+
+  const setVeces = (codigo: string, veces: number) =>
+    onChange((value || []).map((c) => (c.canalCodigo === codigo ? { ...c, vecesPorDia: veces } : c)));
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border p-3">
+      {canales.map((canal) => {
+        const activo = seleccionados.has(canal.codigo);
+        return (
+          <div key={canal.codigo} className="flex items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm text-foreground">
+              <input type="checkbox" checked={activo} onChange={(e) => toggle(canal.codigo, e.target.checked)} />
+              {canal.nombre}
+              {canal.estado !== "Activo" && <span className="text-xs text-muted-foreground">(inactivo)</span>}
+            </label>
+            {activo && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={1}
+                  value={seleccionados.get(canal.codigo) ?? 1}
+                  onChange={(e) => setVeces(canal.codigo, Number(e.target.value) || 1)}
+                  className="w-20 rounded-lg border border-border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <span className="text-xs text-muted-foreground">mensajes/día</span>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** Selección múltiple de canales (para una estrategia). */
+function MulticanalEditor({
+  value,
+  canales,
+  onChange,
+}: {
+  value: string[];
+  canales: CanalContacto[];
+  onChange: (next: string[]) => void;
+}) {
+  const seleccionados = new Set(value || []);
+  const toggle = (codigo: string, on: boolean) => {
+    const next = new Set(seleccionados);
+    if (on) next.add(codigo);
+    else next.delete(codigo);
+    onChange(canales.filter((c) => next.has(c.codigo)).map((c) => c.codigo));
+  };
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border p-3">
+      {canales.map((canal) => (
+        <label key={canal.codigo} className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={seleccionados.has(canal.codigo)}
+            onChange={(e) => toggle(canal.codigo, e.target.checked)}
+          />
+          {canal.nombre}
+          {canal.estado !== "Activo" && <span className="text-xs text-muted-foreground">(inactivo)</span>}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 interface ModalProps {
   category: string;
+  ctx: CatalogCtx;
   editingItem: any;
   onClose: () => void;
   onSave: (data: any) => void;
 }
 
-function CatalogModal({ category, editingItem, onClose, onSave }: ModalProps) {
-  const fields = getCategoryFormFields(category);
+function CatalogModal({ category, ctx, editingItem, onClose, onSave }: ModalProps) {
+  const fields = getCategoryFormFields(category, ctx);
   const cat = categories.find((c) => c.id === category);
 
   const initialState: Record<string, any> = {};
   fields.forEach((f) => {
-    initialState[f.key] = editingItem ? editingItem[f.key] : (f.type === "select" && f.options ? f.options[0] : "");
+    if (editingItem) {
+      initialState[f.key] = editingItem[f.key];
+      return;
+    }
+    if (f.type === "canalesFrecuencia" || f.type === "multicanal") initialState[f.key] = [];
+    else if (f.type === "select" && f.options?.length) initialState[f.key] = optionValue(f.options[0]);
+    else initialState[f.key] = "";
   });
 
   const [form, setForm] = useState<Record<string, any>>(initialState);
 
-  const handleChange = (key: string, value: string) => {
+  const handleChange = (key: string, value: any) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleSubmit = () => {
-    onSave({ ...form, id: editingItem?.id || Date.now() });
+    onSave(coerceItem(category, { ...form, id: editingItem?.id || Date.now() }));
   };
 
   if (fields.length === 0) return null;
@@ -207,8 +394,21 @@ function CatalogModal({ category, editingItem, onClose, onSave }: ModalProps) {
           {fields.map((field) => (
             <div key={field.key}>
               <label className="block text-sm font-medium text-foreground mb-1">{field.label}</label>
+              {field.help && <p className="mb-2 text-xs text-muted-foreground">{field.help}</p>}
 
-              {field.type === "select" ? (
+              {field.type === "canalesFrecuencia" ? (
+                <CanalesFrecuenciaEditor
+                  value={form[field.key] || []}
+                  canales={ctx.canales}
+                  onChange={(next) => handleChange(field.key, next)}
+                />
+              ) : field.type === "multicanal" ? (
+                <MulticanalEditor
+                  value={form[field.key] || []}
+                  canales={ctx.canales}
+                  onChange={(next) => handleChange(field.key, next)}
+                />
+              ) : field.type === "select" ? (
                 field.allowCustom ? (
                   <>
                     <input
@@ -220,7 +420,7 @@ function CatalogModal({ category, editingItem, onClose, onSave }: ModalProps) {
                     />
                     <datalist id={`${category}-${field.key}-list`}>
                       {field.options?.map((opt) => (
-                        <option key={opt} value={opt} />
+                        <option key={optionValue(opt)} value={optionValue(opt)} />
                       ))}
                     </datalist>
                   </>
@@ -231,7 +431,9 @@ function CatalogModal({ category, editingItem, onClose, onSave }: ModalProps) {
                     className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     {field.options?.map((opt) => (
-                      <option key={opt} value={opt}>{opt}</option>
+                      <option key={optionValue(opt)} value={optionValue(opt)}>
+                        {optionLabel(opt)}
+                      </option>
                     ))}
                   </select>
                 )
@@ -246,6 +448,7 @@ function CatalogModal({ category, editingItem, onClose, onSave }: ModalProps) {
               ) : (
                 <input
                   type={field.type}
+                  step={field.key === "duracionDias" ? "0.5" : undefined}
                   value={form[field.key] ?? ""}
                   onChange={(e) => handleChange(field.key, e.target.value)}
                   placeholder={field.placeholder}
@@ -299,14 +502,21 @@ function EmptyState({ catName, onAdd }: { catName: string; onAdd: () => void }) 
 
 interface DetailProps {
   category: string;
+  ctx: CatalogCtx;
   item: any;
   onClose: () => void;
   onEdit: () => void;
 }
 
-function CatalogDetailModal({ category, item, onClose, onEdit }: DetailProps) {
-  const fields = getCategoryFormFields(category);
+function CatalogDetailModal({ category, ctx, item, onClose, onEdit }: DetailProps) {
+  const fields = getCategoryFormFields(category, ctx);
   const cat = categories.find((c) => c.id === category);
+
+  // En un servicio, muestra también qué estrategias de hostigamiento tiene disponibles.
+  const estrategiasDelServicio =
+    category === "servicios"
+      ? ctx.estrategias.filter((e) => e.tipoCobranza === item.tipoCobranza)
+      : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -326,14 +536,37 @@ function CatalogDetailModal({ category, item, onClose, onEdit }: DetailProps) {
             {fields.map((field) => (
               <div key={field.key} className="border-b border-border/60 py-1">
                 <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{field.label}</dt>
-                <dd className="text-sm text-foreground mt-0.5">
-                  {item[field.key] === "" || item[field.key] === undefined || item[field.key] === null
-                    ? "—"
-                    : String(item[field.key])}
-                </dd>
+                <dd className="text-sm text-foreground mt-0.5">{formatFieldValue(field, item, ctx)}</dd>
               </div>
             ))}
           </dl>
+
+          {category === "servicios" && (
+            <div className="mt-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Estrategias de hostigamiento disponibles
+              </p>
+              {estrategiasDelServicio.length === 0 ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Ninguna. Crea estrategias en el Catálogo de Estrategias para este tipo de cobranza.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1.5">
+                  {estrategiasDelServicio.map((e) => (
+                    <li key={e.codigo} className="rounded-lg border border-border/60 px-3 py-2 text-sm">
+                      <span className="font-medium text-foreground">{e.codigo} · {e.nombre}</span>{" "}
+                      <span className="text-muted-foreground">
+                        — {formatListaCanales(e.canalCodigos, ctx.canales)} ·{" "}
+                        {ctx.plantillas.find((p) => p.codigo === e.plantillaCodigo)?.nombre || "—"} ·{" "}
+                        {formatDuracion(Number(e.duracionDias))} · S/ {Number(e.tarifa).toLocaleString()}
+                        {e.estado !== "Activo" && " · (inactiva)"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
@@ -412,8 +645,9 @@ export function ParamsMaintenance() {
     // Seed core catalogs once (only if localStorage is empty for that catalog)
     ensureCatalogSeeded("servicios", serviciosData as any[]);
     ensureCatalogSeeded("canales", canalesData as any[]);
-    ensureCatalogSeeded("operarios", operariosData as any[]);
     ensureCatalogSeeded("plantillas", plantillasData as any[]);
+    ensureCatalogSeeded("estrategias", estrategiasData as any[]);
+    ensureCatalogSeeded("automata", automataData as any[]);
   }, []);
 
   useEffect(() => {
@@ -434,6 +668,16 @@ export function ParamsMaintenance() {
     });
     setLocalData(next);
   }, []);
+
+  const ctx: CatalogCtx = useMemo(
+    () => ({
+      canales: (localData["canales"] || canalesData) as CanalContacto[],
+      plantillas: (localData["plantillas"] || plantillasData) as PlantillaMensaje[],
+      servicios: (localData["servicios"] || serviciosData) as ServicioCobranza[],
+      estrategias: (localData["estrategias"] || estrategiasData) as EstrategiaCobranza[],
+    }),
+    [localData],
+  );
 
   const selectedCat = categories.find((c) => c.id === selectedCategory)!;
   const IconComponent = selectedCat.icon;
@@ -479,9 +723,9 @@ export function ParamsMaintenance() {
     setDeletingItem(null);
   };
 
-  const baseColumns = getCategoryColumns(selectedCategory);
+  const baseColumns = getCategoryColumns(selectedCategory, ctx);
   const data = getData();
-  const hasForm = getCategoryFormFields(selectedCategory).length > 0;
+  const hasForm = getCategoryFormFields(selectedCategory, ctx).length > 0;
 
   const actionsColumn = {
     key: "__acciones",
@@ -529,14 +773,12 @@ export function ParamsMaintenance() {
               <IconComponent className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="font-semibold text-sm">{selectedCat.name}</h2>
-              <p className="text-xs opacity-70">{data.length} registro(s)</p>
+              <h2 className="font-semibold text-base">{selectedCat.name}</h2>
+              <p className="text-sm opacity-70">{data.length} registro(s)</p>
             </div>
           </div>
 
-          {columns.length === 0 ? (
-            <EmptyState catName={selectedCat.name} onAdd={handleAdd} />
-          ) : data.length === 0 ? (
+          {columns.length === 0 || data.length === 0 ? (
             <EmptyState catName={selectedCat.name} onAdd={handleAdd} />
           ) : (
             <DataTable
@@ -555,6 +797,7 @@ export function ParamsMaintenance() {
       {showModal && (
         <CatalogModal
           category={selectedCategory}
+          ctx={ctx}
           editingItem={editingItem}
           onClose={() => setShowModal(false)}
           onSave={handleSave}
@@ -564,6 +807,7 @@ export function ParamsMaintenance() {
       {viewingItem && (
         <CatalogDetailModal
           category={selectedCategory}
+          ctx={ctx}
           item={viewingItem}
           onClose={() => setViewingItem(null)}
           onEdit={() => handleEdit(viewingItem)}

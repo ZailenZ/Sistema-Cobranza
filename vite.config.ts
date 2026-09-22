@@ -17,12 +17,15 @@ function figmaAssetResolver() {
 }
 
 export default defineConfig(({ mode }) => ({
+  // En GitHub Pages el sitio se sirve bajo /<repo>/, así que el build de producción
+  // necesita ese prefijo o los assets quedan apuntando a la raíz y la página sale en blanco.
+  // En CI lo toma de GITHUB_REPOSITORY; en un build local cae al nombre de este repo.
   base:
     mode === 'production'
       ? process.env.VITE_BASE_PATH ||
         (process.env.GITHUB_REPOSITORY
           ? `/${process.env.GITHUB_REPOSITORY.split('/')[1]}/`
-          : '/')
+          : '/Sistema-Cobranza/')
       : '/',
   plugins: [
     figmaAssetResolver(),

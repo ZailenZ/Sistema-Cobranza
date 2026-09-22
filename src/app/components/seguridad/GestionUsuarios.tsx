@@ -25,7 +25,7 @@ import { cn } from "../ui/utils";
 // Permite registrar, consultar, modificar y activar/desactivar usuarios.
 // El perfil asociado controla los módulos que puede ver el usuario.
 
-const PERFILES = ["Administrador", "Gerencial", "Operativo", "Técnico"] as const;
+const PERFILES = ["Administrador", "Gestor de seguridad", "Gerente", "Sponsor", "Técnico"] as const;
 type PerfilUsuario = (typeof PERFILES)[number];
 
 const TIPOS_DOC = ["DNI", "CE", "Pasaporte"] as const;
@@ -55,46 +55,36 @@ const USUARIOS_SEED: Usuario[] = [
   },
   {
     id: "USR-002",
+    nombre: "Rosa Valverde Campos",
+    tipoDoc: "DNI",
+    numDoc: "44012399",
+    email: "r.valverde@cobranza.pe",
+    perfil: "Gestor de seguridad",
+    estado: "Activo",
+    ultimaConexion: "01/07/2026 08:20",
+  },
+  {
+    id: "USR-003",
     nombre: "Carlos Mendoza Ríos",
     tipoDoc: "DNI",
     numDoc: "41890234",
     email: "c.mendoza@cobranza.pe",
-    perfil: "Gerencial",
+    perfil: "Gerente",
     estado: "Activo",
     ultimaConexion: "30/06/2026 17:45",
   },
   {
-    id: "USR-003",
-    nombre: "Patricia León Vega",
-    tipoDoc: "DNI",
-    numDoc: "42567190",
-    email: "p.leon@cobranza.pe",
-    perfil: "Gerencial",
-    estado: "Activo",
-    ultimaConexion: "01/07/2026 09:02",
-  },
-  {
     id: "USR-004",
-    nombre: "Lucía Fernández Paz",
+    nombre: "Rosa Delgado",
     tipoDoc: "DNI",
-    numDoc: "45879632",
-    email: "l.fernandez@cobranza.pe",
-    perfil: "Operativo",
+    numDoc: "48123456",
+    email: "r.delgado@financieraandina.pe",
+    perfil: "Sponsor",
     estado: "Activo",
-    ultimaConexion: "01/07/2026 07:58",
+    ultimaConexion: "01/07/2026 07:30",
   },
   {
     id: "USR-005",
-    nombre: "Diego Salas Quispe",
-    tipoDoc: "DNI",
-    numDoc: "46012885",
-    email: "d.salas@cobranza.pe",
-    perfil: "Operativo",
-    estado: "Inactivo",
-    ultimaConexion: "15/05/2026 11:30",
-  },
-  {
-    id: "USR-006",
     nombre: "Jorge Ramírez Soto",
     tipoDoc: "DNI",
     numDoc: "43567812",
@@ -111,15 +101,16 @@ const emptyUsuario = (): Usuario => ({
   tipoDoc: "DNI",
   numDoc: "",
   email: "",
-  perfil: "Operativo",
+  perfil: "Gerente",
   estado: "Activo",
   ultimaConexion: "—",
 });
 
 const PERFIL_COLOR: Record<PerfilUsuario, string> = {
   Administrador: "bg-foreground/10 text-foreground border-foreground/20",
-  Gerencial: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
-  Operativo: "bg-green-500/10 text-green-600 border-green-500/20 dark:text-green-400",
+  "Gestor de seguridad": "bg-violet-500/10 text-violet-600 border-violet-500/20 dark:text-violet-400",
+  Gerente: "bg-blue-500/10 text-blue-600 border-blue-500/20 dark:text-blue-400",
+  Sponsor: "bg-pink-500/10 text-pink-600 border-pink-500/20 dark:text-pink-400",
   Técnico: "bg-orange-500/10 text-orange-600 border-orange-500/20 dark:text-orange-400",
 };
 
