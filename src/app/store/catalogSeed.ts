@@ -117,6 +117,8 @@ export type ServicioCobranza = {
   /** Estrategias de hostigamiento que este tipo de cobranza puede usar. La relación
    *  servicio ↔ estrategia se define aquí, no en el catálogo de estrategias. */
   estrategiaCodigos: string[];
+  /** Tipo de mensaje base con el que se contacta en este tipo de cobranza. */
+  plantillaCodigo: string;
   /** Canales que usa este tipo de cobranza, cada uno con su frecuencia diaria. */
   canales: CanalFrecuencia[];
   descripcion: string;
@@ -130,6 +132,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     tipoCobranza: "Cobranza temprana",
     tipoMorosoCodigo: "MOR-001",
     estrategiaCodigos: ["EST-01", "EST-02", "EST-03"],
+    plantillaCodigo: "PLT-001",
     canales: [
       { canalCodigo: "CAN-001", vecesPorDia: 3 },
       { canalCodigo: "CAN-002", vecesPorDia: 2 },
@@ -143,6 +146,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     tipoCobranza: "Cobranza intermedia",
     tipoMorosoCodigo: "MOR-002",
     estrategiaCodigos: ["EST-04", "EST-05", "EST-06", "EST-07"],
+    plantillaCodigo: "PLT-003",
     canales: [
       { canalCodigo: "CAN-002", vecesPorDia: 3 },
       { canalCodigo: "CAN-003", vecesPorDia: 2 },
@@ -157,6 +161,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     tipoCobranza: "Cobranza prejudicial",
     tipoMorosoCodigo: "MOR-003",
     estrategiaCodigos: ["EST-08", "EST-09", "EST-10"],
+    plantillaCodigo: "PLT-005",
     canales: [
       { canalCodigo: "CAN-004", vecesPorDia: 2 },
       { canalCodigo: "CAN-002", vecesPorDia: 3 },
@@ -171,6 +176,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     tipoCobranza: "Cobranza judicial",
     tipoMorosoCodigo: "MOR-004",
     estrategiaCodigos: ["EST-11"],
+    plantillaCodigo: "PLT-006",
     canales: [{ canalCodigo: "CAN-005", vecesPorDia: 1 }],
     descripcion: "Notificación formal por carta notarial para derivar el caso a proceso judicial.",
     estado: "Activo",
@@ -182,6 +188,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     tipoCobranza: "Cobranza Extra (ejemplo)",
     tipoMorosoCodigo: "MOR-005",
     estrategiaCodigos: ["EST-12"],
+    plantillaCodigo: "PLT-007",
     canales: [{ canalCodigo: "CAN-006", vecesPorDia: 1 }],
     descripcion: "Servicio de ejemplo para probar la desactivación de un tipo de cobranza.",
     estado: "Inactivo",

@@ -132,6 +132,10 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
           key: "tipoMorosoCodigo", label: "Tipo de moroso", sortable: true,
           render: (i: any) => tipoMorosoDeServicio(i, ctx.morosos)?.nombre || "—",
         },
+        {
+          key: "plantillaCodigo", label: "Tipo de mensaje",
+          render: (i: any) => ctx.plantillas.find((p) => p.codigo === i.plantillaCodigo)?.nombre || "—",
+        },
         { key: "canales",      label: "Canales y frecuencia", render: (i: any) => formatCanalesFrecuencia(i.canales, ctx.canales) },
         { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         {
@@ -257,6 +261,7 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
           type: "multiestrategia",
           help: "Marca las estrategias que puede usar este tipo de cobranza. La relación servicio ↔ estrategia se define aquí.",
         },
+        { key: "plantillaCodigo", label: "Tipo de mensaje", type: "select", options: plantillaOptions, help: "Mensaje base con el que se contacta en este tipo de cobranza." },
         {
           key: "canales",
           label: "Canales y frecuencia",
