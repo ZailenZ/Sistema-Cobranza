@@ -9,7 +9,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { DollarSign, Percent, TrendingUp } from "lucide-react";
+import { Clock, DollarSign, HandCoins, MessageSquareReply, Percent, TrendingUp } from "lucide-react";
 
 import { PageHeader } from "../../shared/PageHeader";
 import { KPICard } from "../../shared/KPICard";
@@ -23,21 +23,29 @@ type RegistroKpi = {
   sponsor: string;
   montoAsignado: number;
   montoRecuperado: number;
+  /** Gestiones enviadas y cuántas obtuvieron respuesta del moroso. */
+  gestiones: number;
+  respuestas: number;
+  /** Días promedio entre la gestión enviada y la respuesta/cierre del caso. */
+  diasResolucion: number;
+  /** Compromisos de pago obtenidos y cuántos terminaron pagándose. */
+  compromisos: number;
+  pagosCumplidos: number;
 };
 
 const HISTORICO: RegistroKpi[] = [
-  { periodo: "2026-04", sponsor: "Financiera Andina S.A.", montoAsignado: 210000, montoRecuperado: 98000 },
-  { periodo: "2026-04", sponsor: "Retail Norte S.A.C.", montoAsignado: 104000, montoRecuperado: 41000 },
-  { periodo: "2026-04", sponsor: "Telecom del Sur S.A.", montoAsignado: 76000, montoRecuperado: 52000 },
-  { periodo: "2026-05", sponsor: "Financiera Andina S.A.", montoAsignado: 218000, montoRecuperado: 121000 },
-  { periodo: "2026-05", sponsor: "Retail Norte S.A.C.", montoAsignado: 108000, montoRecuperado: 47000 },
-  { periodo: "2026-05", sponsor: "Telecom del Sur S.A.", montoAsignado: 79000, montoRecuperado: 61000 },
-  { periodo: "2026-06", sponsor: "Financiera Andina S.A.", montoAsignado: 224000, montoRecuperado: 143000 },
-  { periodo: "2026-06", sponsor: "Retail Norte S.A.C.", montoAsignado: 112000, montoRecuperado: 58000 },
-  { periodo: "2026-06", sponsor: "Telecom del Sur S.A.", montoAsignado: 83000, montoRecuperado: 69000 },
-  { periodo: "2026-07", sponsor: "Financiera Andina S.A.", montoAsignado: 231000, montoRecuperado: 150000 },
-  { periodo: "2026-07", sponsor: "Retail Norte S.A.C.", montoAsignado: 118000, montoRecuperado: 52000 },
-  { periodo: "2026-07", sponsor: "Telecom del Sur S.A.", montoAsignado: 88000, montoRecuperado: 74000 },
+  { periodo: "2026-04", sponsor: "Financiera Andina S.A.", montoAsignado: 210000, montoRecuperado: 98000, gestiones: 820, respuestas: 214, diasResolucion: 4.8, compromisos: 96, pagosCumplidos: 54 },
+  { periodo: "2026-04", sponsor: "Retail Norte S.A.C.", montoAsignado: 104000, montoRecuperado: 41000, gestiones: 410, respuestas: 121, diasResolucion: 6.1, compromisos: 52, pagosCumplidos: 24 },
+  { periodo: "2026-04", sponsor: "Telecom del Sur S.A.", montoAsignado: 76000, montoRecuperado: 52000, gestiones: 300, respuestas: 118, diasResolucion: 3.9, compromisos: 44, pagosCumplidos: 29 },
+  { periodo: "2026-05", sponsor: "Financiera Andina S.A.", montoAsignado: 218000, montoRecuperado: 121000, gestiones: 860, respuestas: 251, diasResolucion: 4.4, compromisos: 104, pagosCumplidos: 63 },
+  { periodo: "2026-05", sponsor: "Retail Norte S.A.C.", montoAsignado: 108000, montoRecuperado: 47000, gestiones: 425, respuestas: 134, diasResolucion: 5.8, compromisos: 56, pagosCumplidos: 27 },
+  { periodo: "2026-05", sponsor: "Telecom del Sur S.A.", montoAsignado: 79000, montoRecuperado: 61000, gestiones: 312, respuestas: 129, diasResolucion: 3.6, compromisos: 47, pagosCumplidos: 33 },
+  { periodo: "2026-06", sponsor: "Financiera Andina S.A.", montoAsignado: 224000, montoRecuperado: 143000, gestiones: 890, respuestas: 275, diasResolucion: 4.1, compromisos: 112, pagosCumplidos: 71 },
+  { periodo: "2026-06", sponsor: "Retail Norte S.A.C.", montoAsignado: 112000, montoRecuperado: 58000, gestiones: 440, respuestas: 146, diasResolucion: 5.5, compromisos: 60, pagosCumplidos: 31 },
+  { periodo: "2026-06", sponsor: "Telecom del Sur S.A.", montoAsignado: 83000, montoRecuperado: 69000, gestiones: 325, respuestas: 138, diasResolucion: 3.4, compromisos: 50, pagosCumplidos: 36 },
+  { periodo: "2026-07", sponsor: "Financiera Andina S.A.", montoAsignado: 231000, montoRecuperado: 150000, gestiones: 915, respuestas: 289, diasResolucion: 3.9, compromisos: 118, pagosCumplidos: 76 },
+  { periodo: "2026-07", sponsor: "Retail Norte S.A.C.", montoAsignado: 118000, montoRecuperado: 52000, gestiones: 452, respuestas: 140, diasResolucion: 5.9, compromisos: 58, pagosCumplidos: 28 },
+  { periodo: "2026-07", sponsor: "Telecom del Sur S.A.", montoAsignado: 88000, montoRecuperado: 74000, gestiones: 338, respuestas: 147, diasResolucion: 3.2, compromisos: 53, pagosCumplidos: 39 },
 ];
 
 const fmtSol = (n: number) => `S/ ${n.toLocaleString("es-PE")}`;
@@ -69,9 +77,27 @@ export function IndicadoresKPI() {
   );
 
   const totales = useMemo(() => {
-    const asignado = filtrado.reduce((s, r) => s + r.montoAsignado, 0);
-    const recuperado = filtrado.reduce((s, r) => s + r.montoRecuperado, 0);
-    return { asignado, recuperado, tasa: asignado > 0 ? (recuperado / asignado) * 100 : 0 };
+    const suma = (f: (r: RegistroKpi) => number) => filtrado.reduce((s, r) => s + f(r), 0);
+    const asignado = suma((r) => r.montoAsignado);
+    const recuperado = suma((r) => r.montoRecuperado);
+    const gestiones = suma((r) => r.gestiones);
+    const respuestas = suma((r) => r.respuestas);
+    const compromisos = suma((r) => r.compromisos);
+    const pagos = suma((r) => r.pagosCumplidos);
+    // El tiempo de resolución se pondera por gestiones: un periodo con más envíos pesa más.
+    const diasPonderados = suma((r) => r.diasResolucion * r.gestiones);
+    return {
+      asignado,
+      recuperado,
+      tasa: asignado > 0 ? (recuperado / asignado) * 100 : 0,
+      tasaRespuesta: gestiones > 0 ? (respuestas / gestiones) * 100 : 0,
+      tiempoResolucion: gestiones > 0 ? diasPonderados / gestiones : 0,
+      tasaPagos: compromisos > 0 ? (pagos / compromisos) * 100 : 0,
+      gestiones,
+      respuestas,
+      compromisos,
+      pagos,
+    };
   }, [filtrado]);
 
   const porPeriodo = useMemo(() => {
@@ -143,6 +169,27 @@ export function IndicadoresKPI() {
           <KPICard title="Monto asignado" value={fmtSol(totales.asignado)} icon={TrendingUp} variant="secondary" />
           <KPICard title="Monto recuperado" value={fmtSol(totales.recuperado)} icon={DollarSign} variant="secondary" />
           <KPICard title="Tasa de recuperación" value={`${totales.tasa.toFixed(1)}%`} icon={Percent} variant="secondary" />
+          <KPICard
+            title="Tasa de respuestas"
+            value={`${totales.tasaRespuesta.toFixed(1)}%`}
+            icon={MessageSquareReply}
+            variant="secondary"
+            subtitle={`${totales.respuestas.toLocaleString("es-PE")} de ${totales.gestiones.toLocaleString("es-PE")} gestiones`}
+          />
+          <KPICard
+            title="Tiempo promedio de resolución"
+            value={`${totales.tiempoResolucion.toFixed(1)} días`}
+            icon={Clock}
+            variant="secondary"
+            subtitle="Desde la gestión enviada hasta la respuesta"
+          />
+          <KPICard
+            title="Tasa de recuperación de pagos"
+            value={`${totales.tasaPagos.toFixed(1)}%`}
+            icon={HandCoins}
+            variant="secondary"
+            subtitle={`${totales.pagos.toLocaleString("es-PE")} de ${totales.compromisos.toLocaleString("es-PE")} compromisos pagados`}
+          />
         </div>
 
         <div className="rounded-xl border border-border bg-card p-6 shadow-sm">

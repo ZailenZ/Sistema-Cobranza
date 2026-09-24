@@ -50,8 +50,18 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
     Cada uno con estados vacío/lista/edición y las seis acciones: listar, buscar,
     ver detalle, agregar, modificar, eliminar. Cada catálogo incluye un registro de
     ejemplo desactivado, para mostrar que se puede dar de baja sin eliminarlo.
-  - Consultas: Sponsors, Morosos, Indicadores KPI — cada una con filtros, KPIs,
-    gráfica, tabla y exportación.
+  - Consultas:
+    - **Sponsors**: lista → ficha del sponsor con su cartera de morosos.
+    - **Morosos**: cartera consolidada con filtros, KPIs y exportación.
+    - **Autómatas**: carga de trabajo de cada autómata (capacidad, mensajes
+      enviados, respuestas) y, al entrar al detalle, su cola de mensajes por
+      enviar con la fecha que le toca a cada moroso.
+    - **Indicadores KPI**: recuperación de cartera, tasa de respuestas, tiempo
+      promedio de resolución y tasa de recuperación de pagos, con dos gráficas.
+    - **Gráficos estadísticos**: tres indicadores (tipos de cobranza realizadas,
+      canales utilizados, tasa de respuestas), cada uno visible como tabla,
+      gráfico de línea o histograma. Los filtros de tipo y rango de fecha son
+      demostrativos; los datos son de muestra.
 - **Operativo — flujo de autoservicio del Sponsor:**
   1. **Dashboard**: bienvenida y vistazo del flujo completo (4 pasos), con los
      tipos de cobranza del sistema como referencia informativa.

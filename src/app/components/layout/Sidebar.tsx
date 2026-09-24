@@ -71,7 +71,9 @@ const menuBlocks: MenuItem[] = [
         children: [
           { title: "Sponsors", icon: <Building2 className="size-4" />, path: "/gerencial/consultas/sponsors" },
           { title: "Morosos", icon: <UserX className="size-4" />, path: "/gerencial/consultas/morosos" },
+          { title: "Autómatas", icon: <Bot className="size-4" />, path: "/gerencial/consultas/automatas" },
           { title: "Indicadores KPI", icon: <Target className="size-4" />, path: "/gerencial/consultas/indicadores-kpi" },
+          { title: "Gráficos estadísticos", icon: <BarChart3 className="size-4" />, path: "/gerencial/consultas/graficos" },
         ],
       },
     ],

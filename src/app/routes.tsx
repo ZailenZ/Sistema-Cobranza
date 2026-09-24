@@ -10,6 +10,8 @@ import { ParamsMaintenance } from "./components/gerencial/ParamsMaintenance";
 import { Sponsors } from "./components/gerencial/consultas/Sponsors";
 import { Morosos } from "./components/gerencial/consultas/Morosos";
 import { IndicadoresKPI } from "./components/gerencial/consultas/IndicadoresKPI";
+import { Automatas } from "./components/gerencial/consultas/Automatas";
+import { Graficos } from "./components/gerencial/consultas/Graficos";
 import { ReservarTickets } from "./components/operativo/dataentry/ReservarTickets";
 import { EntregaCobranza } from "./components/operativo/dataentry/EntregaCobranza";
 import { ReporteGestionDeudas } from "./components/operativo/reportes/ReporteGestionDeudas";
@@ -44,7 +46,9 @@ export const router = createHashRouter([
       { path: "gerencial/parametros/:category", Component: ParamsMaintenance },
       { path: "gerencial/consultas/sponsors", Component: Sponsors },
       { path: "gerencial/consultas/morosos", Component: Morosos },
+      { path: "gerencial/consultas/automatas", Component: Automatas },
       { path: "gerencial/consultas/indicadores-kpi", Component: IndicadoresKPI },
+      { path: "gerencial/consultas/graficos", Component: Graficos },
 
       // --- Operativo (Data-Entry) ---
       { path: "operativo/dashboard", Component: DashboardOperativo },
