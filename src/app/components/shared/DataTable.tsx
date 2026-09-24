@@ -112,7 +112,7 @@ export function DataTable<T extends { id?: string | number }>({
         </div>
       </div>
 
-      <div className="border-t border-border">
+      <div className="scrollbar-modern overflow-x-auto border-t border-border">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">

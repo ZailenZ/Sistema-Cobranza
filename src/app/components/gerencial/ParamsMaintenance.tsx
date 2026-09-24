@@ -13,6 +13,8 @@ import {
   ensureCatalogSeeded,
   formatCanalesFrecuencia,
   formatRangoIncidencias,
+  formatRangoMora,
+  formatRangoSaldo,
   tipoMorosoDeServicio,
   formatDuracion,
   formatListaCanales,
@@ -133,7 +135,7 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
           render: (i: any) => tipoMorosoDeServicio(i, ctx.morosos)?.nombre || "—",
         },
         { key: "canales",      label: "Canales y frecuencia", render: (i: any) => formatCanalesFrecuencia(i.canales, ctx.canales) },
-        { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-[200px]">{i.descripcion || "—"}</span> },
         {
           key: "estrategiaCodigos", label: "Estrategias",
           render: (i: any) => {
@@ -149,25 +151,10 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         { key: "codigo",      label: "Código",          sortable: true },
         { key: "nombre",      label: "Tipo de moroso",  sortable: true },
         { key: "__incidencias", label: "N° de incidencias", render: (i: any) => formatRangoIncidencias(i) },
-        { key: "moraMin",     label: "Mora mín. (días)" },
-        { key: "moraMax",     label: "Mora máx. (días)", render: (i: any) => (i.moraMax === null || i.moraMax === "" ? "A más" : i.moraMax) },
-        { key: "saldoMin",    label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
-        { key: "saldoMax",    label: "Saldo máx. (S/)",  render: (i: any) => (i.saldoMax === null || i.saldoMax === "" ? "A más" : `S/ ${Number(i.saldoMax).toLocaleString()}`) },
-        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "moraMin",     label: "Mora",  sortable: true, render: (i: any) => formatRangoMora(i) },
+        { key: "saldoMin",    label: "Saldo", sortable: true, render: (i: any) => formatRangoSaldo(i) },
+        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-[200px]">{i.descripcion || "—"}</span> },
         { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
-      ];
-    case "morosos":
-      return [
-        { key: "codigo",      label: "Código",            type: "text",   optional: true, placeholder: "Ej: MOR-006" },
-        { key: "nombre",      label: "Tipo de moroso",    type: "text",   placeholder: "Ej: Moroso ocasional" },
-        { key: "incidenciasMin", label: "Incidencias mínimas", type: "number", placeholder: "Ej: 0", help: "Cuántas veces ha caído en mora." },
-        { key: "incidenciasMax", label: "Incidencias máximas", type: "number", optional: true, placeholder: "Vacío = a más" },
-        { key: "moraMin",     label: "Mora mínima (días)", type: "number", placeholder: "Ej: 1" },
-        { key: "moraMax",     label: "Mora máxima (días)", type: "number", optional: true, placeholder: "Vacío = a más" },
-        { key: "saldoMin",    label: "Saldo mínimo (S/)",  type: "number", placeholder: "Ej: 500" },
-        { key: "saldoMax",    label: "Saldo máximo (S/)",  type: "number", optional: true, placeholder: "Vacío = a más" },
-        { key: "descripcion", label: "Descripción", type: "textarea", optional: true, placeholder: "Describe a este tipo de moroso" },
-        { key: "estado",      label: "Estado",      type: "select", options: estadoOptions },
       ];
     case "canales":
       return [
@@ -176,14 +163,14 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         { key: "tipoCanal",   label: "Tipo de Canal" },
         { key: "horaInicio",  label: "Hora inicio" },
         { key: "horaFin",     label: "Hora fin" },
-        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-[200px]">{i.descripcion || "—"}</span> },
         { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "plantillas":
       return [
         { key: "codigo",      label: "Código",          sortable: true },
         { key: "nombre",      label: "Tipo de mensaje", sortable: true },
-        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-[200px]">{i.descripcion || "—"}</span> },
         { key: "mensaje",     label: "Mensaje", render: (i: any) => <span className="line-clamp-2 max-w-md">{i.mensaje}</span> },
         { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
@@ -206,7 +193,7 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         },
         { key: "duracionDias", label: "Duración",  render: (i: any) => formatDuracion(Number(i.duracionDias)) },
         { key: "tarifa",       label: "Tarifa (S/)", sortable: true, render: (i: any) => `S/ ${Number(i.tarifa).toLocaleString()}` },
-        { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-[200px]">{i.descripcion || "—"}</span> },
         { key: "estado",       label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "automata":
@@ -214,7 +201,7 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         { key: "codigo",             label: "Código", sortable: true },
         { key: "nombre",             label: "Autómata", sortable: true },
         { key: "capacidadMaxPorDia", label: "Capacidad máx. por día", render: (i: any) => Number(i.capacidadMaxPorDia || 0).toLocaleString() },
-        { key: "descripcion",        label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "descripcion",        label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-[200px]">{i.descripcion || "—"}</span> },
         { key: "estado",             label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     default:
@@ -265,6 +252,19 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
         },
         { key: "descripcion",  label: "Descripción", type: "textarea", optional: true, placeholder: "Describe el criterio de gestión" },
         { key: "estado",       label: "Estado",      type: "select", options: estadoOptions },
+      ];
+    case "morosos":
+      return [
+        { key: "codigo",      label: "Código",            type: "text",   optional: true, placeholder: "Ej: MOR-006" },
+        { key: "nombre",      label: "Tipo de moroso",    type: "text",   placeholder: "Ej: Moroso ocasional" },
+        { key: "incidenciasMin", label: "Incidencias mínimas", type: "number", placeholder: "Ej: 0", help: "Cuántas veces ha caído en mora." },
+        { key: "incidenciasMax", label: "Incidencias máximas", type: "number", optional: true, placeholder: "Vacío = a más" },
+        { key: "moraMin",     label: "Mora mínima (días)", type: "number", placeholder: "Ej: 1" },
+        { key: "moraMax",     label: "Mora máxima (días)", type: "number", optional: true, placeholder: "Vacío = a más" },
+        { key: "saldoMin",    label: "Saldo mínimo (S/)",  type: "number", placeholder: "Ej: 500" },
+        { key: "saldoMax",    label: "Saldo máximo (S/)",  type: "number", optional: true, placeholder: "Vacío = a más" },
+        { key: "descripcion", label: "Descripción", type: "textarea", optional: true, placeholder: "Describe a este tipo de moroso" },
+        { key: "estado",      label: "Estado",      type: "select", options: estadoOptions },
       ];
     case "canales":
       return [
