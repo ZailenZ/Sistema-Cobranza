@@ -26,6 +26,8 @@ export type EnvioDetalleData = {
   tipoCobranza: string;
   /** Perfil del Catálogo de Morosos en el que cae el deudor (por sus días de mora). */
   tipoMoroso?: string;
+  /** Medio externo por el que el autómata despachó el mensaje. */
+  medio?: string;
   sponsorNombre: string;
   saldo: number;
   diasMora: number;
@@ -67,6 +69,7 @@ export function EnvioDetalleModal({
     plantillaMensaje,
     tipoCobranza,
     tipoMoroso,
+    medio,
     sponsorNombre,
     saldo,
     diasMora,
@@ -107,7 +110,8 @@ export function EnvioDetalleModal({
                 {estrategiaTexto && <Campo label="Estrategia" value={estrategiaTexto} />}
                 <Campo label="Respuesta" value={envio.respuesta} />
                 <Campo label="Canal(es)" value={canalesTexto} />
-                <Campo label="Operador" value={envio.operador} />
+                <Campo label="Autómata" value={envio.operador} />
+                <Campo label="Medio" value={medio || envio.medio || "—"} />
                 <Campo label="Plantilla" value={plantillaNombre} />
                 <Campo label="Mora" value={`${diasMora} días`} />
                 <Campo label="Nro." value={telefono || "—"} />
@@ -143,7 +147,7 @@ export function EnvioDetalleModal({
                 envio.respuesta === "Afirmativa" ? "bg-emerald-600" : envio.respuesta === "Negativa" ? "bg-rose-600" : "bg-muted-foreground"
               }`}
             >
-              Mensaje "{plantillaNombre}" enviado por {canalesTexto}
+              Mensaje "{plantillaNombre}" enviado por {canalesTexto}{medio || envio.medio ? ` · vía ${medio || envio.medio}` : ""}
             </div>
 
             <div className="whitespace-pre-line rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-foreground">

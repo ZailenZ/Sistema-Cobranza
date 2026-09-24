@@ -42,7 +42,7 @@ export const CANALES_SEED: CanalContacto[] = [
   { id: 2, codigo: "CAN-002", nombre: "Whatsapp", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "21:00", descripcion: "Mensajería instantánea con mayor tasa de lectura y respuesta.", estado: "Activo" },
   { id: 3, codigo: "CAN-003", nombre: "Correo", tipoCanal: "Digital", horaInicio: "00:00", horaFin: "23:59", descripcion: "Comunicación formal, deja constancia escrita del aviso enviado.", estado: "Activo" },
   { id: 4, codigo: "CAN-004", nombre: "Llamada (IVR)", tipoCanal: "Digital", horaInicio: "09:00", horaFin: "18:00", descripcion: "Llamada automatizada con menú de respuesta; solo en horario laboral.", estado: "Activo" },
-  { id: 5, codigo: "CAN-005", nombre: "Carta notarial", tipoCanal: "Físico", horaInicio: "09:00", horaFin: "17:00", descripcion: "Entrega física de la carta notarial en el domicilio del moroso.", estado: "Activo" },
+  { id: 5, codigo: "CAN-005", nombre: "Carta notarial", tipoCanal: "Físico", horaInicio: "09:00", horaFin: "17:00", descripcion: "Entrega física: la notaría lleva la carta al domicilio del moroso a través de un notario.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un canal puede darse de baja sin eliminarlo.
   { id: 6, codigo: "CAN-006", nombre: "Telegram (ejemplo)", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "20:00", descripcion: "Canal de ejemplo para probar la desactivación de un canal.", estado: "Inactivo" },
 ];
@@ -310,14 +310,18 @@ export type AutomataCatalogo = {
   estado: "Activo" | "Inactivo";
 };
 
+// Un autómata NO entrega el mensaje por su cuenta: toma la plantilla, arma el
+// mensaje para cada moroso y lo despacha a través de un MEDIO externo, que es
+// quien lo hace llegar y devuelve la respuesta. El medio depende del moroso
+// (su operador móvil, su proveedor de correo) o del canal (la notaría).
 export const AUTOMATA_SEED: AutomataCatalogo[] = [
-  { id: 1, codigo: "AUT-001", nombre: "Autómata de SMS", capacidadMaxPorDia: 2500, descripcion: "Robot que envía los SMS masivos de las estrategias.", estado: "Activo" },
-  { id: 2, codigo: "AUT-002", nombre: "Autómata de Whatsapp", capacidadMaxPorDia: 3000, descripcion: "Robot que envía los mensajes de WhatsApp y recibe las respuestas.", estado: "Activo" },
-  { id: 3, codigo: "AUT-003", nombre: "Autómata de correos", capacidadMaxPorDia: 1000, descripcion: "Robot que envía los avisos formales por correo electrónico.", estado: "Activo" },
-  { id: 4, codigo: "AUT-004", nombre: "Autómata de llamadas", capacidadMaxPorDia: 500, descripcion: "Robot de llamadas IVR con menú de respuesta para el moroso.", estado: "Activo" },
-  { id: 5, codigo: "AUT-005", nombre: "Notario", capacidadMaxPorDia: 40, descripcion: "Notario que entrega las cartas notariales en el domicilio del moroso.", estado: "Activo" },
+  { id: 1, codigo: "AUT-001", nombre: "Autómata de SMS", capacidadMaxPorDia: 2500, descripcion: "Arma el SMS desde la plantilla y lo despacha por el operador móvil de cada moroso (Claro, Movistar, Entel); por ahí mismo le vuelve la respuesta.", estado: "Activo" },
+  { id: 2, codigo: "AUT-002", nombre: "Autómata de Whatsapp", capacidadMaxPorDia: 3000, descripcion: "Arma el mensaje desde la plantilla y lo despacha por WhatsApp, que lo entrega al número del moroso y devuelve lo que responde.", estado: "Activo" },
+  { id: 3, codigo: "AUT-003", nombre: "Autómata de correos", capacidadMaxPorDia: 1000, descripcion: "Arma el correo desde la plantilla y lo despacha por el proveedor de correo del moroso (Gmail, Outlook, iCloud), que lo entrega en su bandeja.", estado: "Activo" },
+  { id: 4, codigo: "AUT-004", nombre: "Autómata de llamadas", capacidadMaxPorDia: 500, descripcion: "Convierte la plantilla en locución IVR y cursa la llamada por el operador telefónico del moroso; el menú de respuesta recoge lo que contesta.", estado: "Activo" },
+  { id: 5, codigo: "AUT-005", nombre: "Autómata de cartas", capacidadMaxPorDia: 40, descripcion: "Genera la carta notarial desde la plantilla y la despacha por medio de la notaría, que la hace entregar por un notario en el domicilio del moroso.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un autómata puede darse de baja sin eliminarlo.
-  { id: 6, codigo: "AUT-006", nombre: "Autómata de Telegram (ejemplo)", capacidadMaxPorDia: 800, descripcion: "Autómata de ejemplo para probar la desactivación.", estado: "Inactivo" },
+  { id: 6, codigo: "AUT-006", nombre: "Autómata de Telegram (ejemplo)", capacidadMaxPorDia: 800, descripcion: "Autómata de ejemplo para probar la desactivación; despacharía por Telegram.", estado: "Inactivo" },
 ];
 
 // --- Helpers de formato compartidos por las pantallas ---
