@@ -53,6 +53,13 @@ const NOMBRES_MOROSOS = [
   { nombre: "Camila Soto Herrera", documento: "DNI 78901234" },
   { nombre: "Renzo Palacios Del Río", documento: "DNI 79012345" },
   { nombre: "Fiorella Aguilar Mamani", documento: "DNI 70123456" },
+  { nombre: "Marcos Ttito Huamán", documento: "DNI 71345920" },
+  { nombre: "Lucía Benavides Ortiz", documento: "DNI 72456031" },
+  { nombre: "Gonzalo Paredes Arce", documento: "DNI 73567142" },
+  { nombre: "Valeria Chumpitaz León", documento: "DNI 74678253" },
+  { nombre: "Ignacio Ramos Cervantes", documento: "DNI 75789364" },
+  { nombre: "Daniela Espinoza Pinto", documento: "DNI 76890475" },
+  { nombre: "Óscar Manrique Tapia", documento: "DNI 77901586" },
 ];
 
 function randomInt(min: number, max: number) {
@@ -205,7 +212,7 @@ export function simularCargaMorosos(sponsorCodigo: string): ResultadoCargaMoroso
   const tiposMoroso = getCatalog<TipoMoroso>("morosos", []);
   if (!sponsor || serviciosActivos.length === 0) return null;
 
-  const cantidad = randomInt(5, 7);
+  const cantidad = randomInt(10, 12);
   const candidatos = [...NOMBRES_MOROSOS].sort(() => Math.random() - 0.5).slice(0, cantidad);
 
   const nuevosDeudores: Deudor[] = [];
