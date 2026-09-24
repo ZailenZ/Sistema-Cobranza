@@ -73,7 +73,7 @@ type FieldOption = string | { value: string; label: string };
 interface FormField {
   key: string;
   label: string;
-  type: "text" | "select" | "number" | "textarea" | "canalesFrecuencia" | "multicanal";
+  type: "text" | "select" | "number" | "textarea" | "time" | "canalesFrecuencia" | "multicanal";
   options?: FieldOption[];
   allowCustom?: boolean;
   optional?: boolean;
@@ -94,7 +94,7 @@ const CAMPOS_NUMERICOS: Record<string, { key: string; nullable?: boolean }[]> = 
     { key: "saldoMax", nullable: true },
   ],
   estrategias: [{ key: "duracionDias" }, { key: "tarifa" }],
-  automata: [{ key: "capacidadMinima", nullable: true }, { key: "capacidadPorDia" }],
+  automata: [{ key: "capacidadMinPorDia" }, { key: "capacidadMaxPorDia" }],
 };
 
 function coerceItem(category: string, data: Record<string, any>) {
@@ -123,6 +123,7 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         { key: "saldoMin",     label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
         { key: "saldoMax",     label: "Saldo máx. (S/)",  render: (i: any) => (i.saldoMax === null || i.saldoMax === "" ? "A más" : `S/ ${Number(i.saldoMax).toLocaleString()}`) },
         { key: "canales",      label: "Canales y frecuencia", render: (i: any) => formatCanalesFrecuencia(i.canales, ctx.canales) },
+        { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         {
           key: "__estrategias", label: "Estrategias",
           render: (i: any) => {
@@ -134,17 +135,21 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
       ];
     case "canales":
       return [
-        { key: "codigo",    label: "Código", sortable: true },
-        { key: "nombre",    label: "Canal",  sortable: true },
-        { key: "tipoCanal", label: "Tipo de Canal" },
-        { key: "estado",    label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+        { key: "codigo",      label: "Código", sortable: true },
+        { key: "nombre",      label: "Canal",  sortable: true },
+        { key: "tipoCanal",   label: "Tipo de Canal" },
+        { key: "horaInicio",  label: "Hora inicio" },
+        { key: "horaFin",     label: "Hora fin" },
+        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "plantillas":
       return [
-        { key: "codigo",  label: "Código",         sortable: true },
-        { key: "nombre",  label: "Tipo de mensaje", sortable: true },
-        { key: "mensaje", label: "Mensaje", render: (i: any) => <span className="line-clamp-2 max-w-md">{i.mensaje}</span> },
-        { key: "estado",  label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+        { key: "codigo",      label: "Código",          sortable: true },
+        { key: "nombre",      label: "Tipo de mensaje", sortable: true },
+        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "mensaje",     label: "Mensaje", render: (i: any) => <span className="line-clamp-2 max-w-md">{i.mensaje}</span> },
+        { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "estrategias":
       return [
@@ -158,15 +163,17 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         },
         { key: "duracionDias", label: "Duración",  render: (i: any) => formatDuracion(Number(i.duracionDias)) },
         { key: "tarifa",       label: "Tarifa (S/)", sortable: true, render: (i: any) => `S/ ${Number(i.tarifa).toLocaleString()}` },
+        { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         { key: "estado",       label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     case "automata":
       return [
-        { key: "codigo",          label: "Código", sortable: true },
-        { key: "nombre",          label: "Autómata", sortable: true },
-        { key: "capacidadMinima", label: "Capacidad mín.", render: (i: any) => (i.capacidadMinima === null || i.capacidadMinima === "" ? "—" : Number(i.capacidadMinima).toLocaleString()) },
-        { key: "capacidadPorDia", label: "Capacidad por día", render: (i: any) => Number(i.capacidadPorDia).toLocaleString() },
-        { key: "estado",          label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+        { key: "codigo",             label: "Código", sortable: true },
+        { key: "nombre",             label: "Autómata", sortable: true },
+        { key: "capacidadMinPorDia", label: "Capacidad mín. por día", render: (i: any) => Number(i.capacidadMinPorDia || 0).toLocaleString() },
+        { key: "capacidadMaxPorDia", label: "Capacidad máx. por día", render: (i: any) => Number(i.capacidadMaxPorDia || 0).toLocaleString() },
+        { key: "descripcion",        label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "estado",             label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];
     default:
       return [];
@@ -209,17 +216,21 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
       ];
     case "canales":
       return [
-        { key: "codigo",    label: "Código de Canal", type: "text",   optional: true, placeholder: "Ej: CAN-007" },
-        { key: "nombre",    label: "Nombre",          type: "select", options: canalNombreOptions, allowCustom: true },
-        { key: "tipoCanal", label: "Tipo de Canal",   type: "select", options: ["Digital", "Físico"] },
-        { key: "estado",    label: "Estado",          type: "select", options: estadoOptions },
+        { key: "codigo",      label: "Código de Canal", type: "text",   optional: true, placeholder: "Ej: CAN-007" },
+        { key: "nombre",      label: "Nombre",          type: "select", options: canalNombreOptions, allowCustom: true },
+        { key: "tipoCanal",   label: "Tipo de Canal",   type: "select", options: ["Digital", "Físico"] },
+        { key: "horaInicio",  label: "Hora de inicio",  type: "time",   help: "Horario diario en el que se permite contactar por este canal." },
+        { key: "horaFin",     label: "Hora final",      type: "time" },
+        { key: "descripcion", label: "Descripción",     type: "textarea", optional: true, placeholder: "Para qué sirve este canal" },
+        { key: "estado",      label: "Estado",          type: "select", options: estadoOptions },
       ];
     case "plantillas":
       return [
-        { key: "codigo",  label: "Código de Plantilla", type: "text",   optional: true, placeholder: "Ej: PLT-008" },
-        { key: "nombre",  label: "Tipo de mensaje",     type: "text",   placeholder: "Ej: Amistoso, Recordatorio, Ultimátum" },
-        { key: "mensaje", label: "Mensaje",             type: "textarea", placeholder: "Texto a enviar. Usa {nombre}, {saldo}, {mora} y {sponsor}." },
-        { key: "estado",  label: "Estado",              type: "select", options: estadoOptions },
+        { key: "codigo",      label: "Código de Plantilla", type: "text",   optional: true, placeholder: "Ej: PLT-008" },
+        { key: "nombre",      label: "Tipo de mensaje",     type: "text",   placeholder: "Ej: Amistoso, Recordatorio, Ultimátum" },
+        { key: "descripcion", label: "Descripción",         type: "textarea", optional: true, placeholder: "Cuándo conviene usar este tipo de mensaje" },
+        { key: "mensaje",     label: "Mensaje",             type: "textarea", placeholder: "Texto a enviar. Usa {nombre}, {saldo}, {mora} y {sponsor}." },
+        { key: "estado",      label: "Estado",              type: "select", options: estadoOptions },
       ];
     case "estrategias":
       return [
@@ -230,15 +241,17 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
         { key: "plantillaCodigo", label: "Tipo de mensaje",      type: "select", options: plantillaOptions },
         { key: "duracionDias",    label: "Duración (días)",      type: "number", placeholder: "Ej: 1.5" },
         { key: "tarifa",          label: "Tarifa (S/)",          type: "number", placeholder: "Ej: 5" },
+        { key: "descripcion",     label: "Descripción",          type: "textarea", optional: true, placeholder: "En qué consiste esta estrategia" },
         { key: "estado",          label: "Estado",               type: "select", options: estadoOptions },
       ];
     case "automata":
       return [
-        { key: "codigo",          label: "Código de Autómata",        type: "text",   optional: true, placeholder: "Ej: AUT-007" },
-        { key: "nombre",          label: "Autómata",                  type: "text",   placeholder: "Ej: Autómata de SMS" },
-        { key: "capacidadMinima", label: "Capacidad de mensaje mín.", type: "number", optional: true, placeholder: "Opcional" },
-        { key: "capacidadPorDia", label: "Capacidad de mensaje por día", type: "number", placeholder: "Ej: 2500" },
-        { key: "estado",          label: "Estado",                    type: "select", options: estadoOptions },
+        { key: "codigo",             label: "Código de Autómata",         type: "text",   optional: true, placeholder: "Ej: AUT-007" },
+        { key: "nombre",             label: "Autómata",                   type: "text",   placeholder: "Ej: Autómata de SMS" },
+        { key: "capacidadMinPorDia", label: "Capacidad mín. por día",     type: "number", placeholder: "Ej: 500" },
+        { key: "capacidadMaxPorDia", label: "Capacidad máx. por día",     type: "number", placeholder: "Ej: 2500" },
+        { key: "descripcion",        label: "Descripción",                type: "textarea", optional: true, placeholder: "Qué envía este autómata" },
+        { key: "estado",             label: "Estado",                     type: "select", options: estadoOptions },
       ];
     default:
       return [];

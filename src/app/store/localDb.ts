@@ -9,7 +9,7 @@ const STORAGE_PREFIX = "swcobranza:";
 // navegador de un usuario que abrió una versión anterior del prototipo nunca
 // se migran solos; sin este chequeo, una pantalla nueva que espere un campo
 // que no existía (p. ej. Servicio.saldoMin) rompe al leer datos con la forma vieja.
-const SCHEMA_VERSION = 7;
+const SCHEMA_VERSION = 8;
 const SCHEMA_VERSION_KEY = `${STORAGE_PREFIX}schemaVersion`;
 
 /** Si el esquema de catálogos/entidades cambió, limpia los datos simulados persistidos
@@ -111,7 +111,7 @@ export type Deudor = {
   email?: string;
   saldoTotal: number;
   diasMoraMax: number;
-  estado: "Al día" | "En Mora" | "Castigado";
+  estado: "Al día" | "En Mora";
   createdAt: string;
 };
 
@@ -126,7 +126,7 @@ export type Deuda = {
   saldo: number;
   fechaVencimiento: string; // yyyy-mm-dd
   diasMora: number;
-  estado: "Pendiente" | "Vencida" | "Pagada" | "Incobrable";
+  estado: "Pendiente" | "Vencida" | "Pagada";
   createdAt: string;
 };
 

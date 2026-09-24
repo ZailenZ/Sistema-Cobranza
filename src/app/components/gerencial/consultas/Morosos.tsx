@@ -13,7 +13,6 @@ const estadoBadge = (estado: string) => {
   const map: Record<string, string> = {
     "Al día": "bg-emerald-100 text-emerald-700",
     "En Mora": "bg-amber-100 text-amber-700",
-    "Castigado": "bg-rose-100 text-rose-700",
   };
   return (
     <span className={`px-2 py-1 text-xs font-medium rounded-full ${map[estado] || "bg-muted text-muted-foreground"}`}>
@@ -58,12 +57,14 @@ export function Morosos() {
 
   const kpis = useMemo(() => {
     const enMora = filtered.filter((r) => r.estado === "En Mora");
-    const castigados = filtered.filter((r) => r.estado === "Castigado");
     const saldoTotal = filtered.reduce((s, r) => s + r.saldoTotal, 0);
+    const moraPromedio = filtered.length
+      ? Math.round(filtered.reduce((s, r) => s + r.diasMoraMax, 0) / filtered.length)
+      : 0;
     return {
       total: filtered.length,
       enMora: enMora.length,
-      castigados: castigados.length,
+      moraPromedio,
       saldoTotal,
     };
   }, [filtered]);
@@ -86,7 +87,6 @@ export function Morosos() {
             <option value="">Todos los estados</option>
             <option value="Al día">Al día</option>
             <option value="En Mora">En Mora</option>
-            <option value="Castigado">Castigado</option>
           </select>
           <select
             value={sponsorFiltro}
@@ -112,7 +112,7 @@ export function Morosos() {
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KPICard title="Deudores" value={kpis.total} icon={Users} variant="secondary" />
           <KPICard title="En Mora" value={kpis.enMora} icon={AlertTriangle} variant="destructive" />
-          <KPICard title="Castigados" value={kpis.castigados} icon={UserX} variant="destructive" />
+          <KPICard title="Mora promedio" value={`${kpis.moraPromedio} días`} icon={UserX} variant="secondary" />
           <KPICard title="Saldo Total" value={fmtSol(kpis.saldoTotal)} icon={DollarSign} variant="secondary" />
         </div>
 

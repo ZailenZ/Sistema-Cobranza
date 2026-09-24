@@ -30,17 +30,21 @@ export type CanalContacto = {
   codigo: string;
   nombre: string;
   tipoCanal: "Digital" | "Físico";
+  /** Horario diario permitido para contactar por este canal (HH:mm). */
+  horaInicio: string;
+  horaFin: string;
+  descripcion: string;
   estado: "Activo" | "Inactivo";
 };
 
 export const CANALES_SEED: CanalContacto[] = [
-  { id: 1, codigo: "CAN-001", nombre: "SMS", tipoCanal: "Digital", estado: "Activo" },
-  { id: 2, codigo: "CAN-002", nombre: "Whatsapp", tipoCanal: "Digital", estado: "Activo" },
-  { id: 3, codigo: "CAN-003", nombre: "Correo", tipoCanal: "Digital", estado: "Activo" },
-  { id: 4, codigo: "CAN-004", nombre: "Llamada (IVR)", tipoCanal: "Digital", estado: "Activo" },
-  { id: 5, codigo: "CAN-005", nombre: "Dron inteligente", tipoCanal: "Físico", estado: "Activo" },
+  { id: 1, codigo: "CAN-001", nombre: "SMS", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "20:00", descripcion: "Mensaje de texto masivo: el canal más económico y de mayor alcance.", estado: "Activo" },
+  { id: 2, codigo: "CAN-002", nombre: "Whatsapp", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "21:00", descripcion: "Mensajería instantánea con mayor tasa de lectura y respuesta.", estado: "Activo" },
+  { id: 3, codigo: "CAN-003", nombre: "Correo", tipoCanal: "Digital", horaInicio: "00:00", horaFin: "23:59", descripcion: "Comunicación formal, deja constancia escrita del aviso enviado.", estado: "Activo" },
+  { id: 4, codigo: "CAN-004", nombre: "Llamada (IVR)", tipoCanal: "Digital", horaInicio: "09:00", horaFin: "18:00", descripcion: "Llamada automatizada con menú de respuesta; solo en horario laboral.", estado: "Activo" },
+  { id: 5, codigo: "CAN-005", nombre: "Dron inteligente", tipoCanal: "Físico", horaInicio: "09:00", horaFin: "17:00", descripcion: "Entrega física de documentos en el domicilio del moroso.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un canal puede darse de baja sin eliminarlo.
-  { id: 6, codigo: "CAN-006", nombre: "Telegram (ejemplo)", tipoCanal: "Digital", estado: "Inactivo" },
+  { id: 6, codigo: "CAN-006", nombre: "Telegram (ejemplo)", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "20:00", descripcion: "Canal de ejemplo para probar la desactivación de un canal.", estado: "Inactivo" },
 ];
 
 // --- Catálogo de servicio: reglas de tipo de cobranza por mora/saldo ---
@@ -147,6 +151,7 @@ export type PlantillaMensaje = {
   codigo: string;
   nombre: string; // tipo de mensaje: Amistoso, Recordatorio, Ultimátum…
   mensaje: string;
+  descripcion: string;
   estado: "Activo" | "Inactivo";
 };
 
@@ -157,6 +162,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     nombre: "Amistoso",
     mensaje:
       "Hola {nombre}, esperamos que estés bien. Te recordamos que tienes una deuda pendiente de {saldo}, con {mora} de retraso, registrada por tu sponsor {sponsor}. Queremos ayudarte a resolverlo de forma sencilla. Responde con: 1 – Sí, voy a pagar. 2 – No puedo pagar ahora, me contactaré con mi sponsor.",
+    descripcion: "Primer contacto cordial: invita a pagar sin presionar.",
     estado: "Activo",
   },
   {
@@ -165,6 +171,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     nombre: "Recordatorio",
     mensaje:
       "Hola {nombre}, te recordamos que tu deuda de {saldo} con {sponsor} ya acumula {mora} de atraso. Regulariza hoy para evitar recargos adicionales.",
+    descripcion: "Segundo toque: recuerda la deuda y menciona los recargos.",
     estado: "Activo",
   },
   {
@@ -173,6 +180,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     nombre: "Aviso formal",
     mensaje:
       "Estimado(a) {nombre}: Le informamos formalmente que su cuenta con {sponsor} registra {mora} de atraso y un saldo pendiente de {saldo}. Le solicitamos regularizar su situación a la brevedad.",
+    descripcion: "Comunicación formal que deja constancia escrita del atraso.",
     estado: "Activo",
   },
   {
@@ -181,6 +189,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     nombre: "Advertencia",
     mensaje:
       "Estimado(a) {nombre}: Su deuda de {saldo} con {sponsor} acumula {mora} de atraso. De no registrarse su pago, el caso pasará a la etapa prejudicial con los costos adicionales que ello implica.",
+    descripcion: "Anuncia que el caso puede escalar a la etapa prejudicial.",
     estado: "Activo",
   },
   {
@@ -189,6 +198,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     nombre: "Ultimátum",
     mensaje:
       "Estimado(a) {nombre}: Este es el último aviso antes de iniciar acciones legales. Su deuda de {saldo} con {sponsor} registra {mora} de atraso. Cuenta con 48 horas para regularizar.",
+    descripcion: "Último aviso antes de iniciar acciones legales.",
     estado: "Activo",
   },
   {
@@ -197,6 +207,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     nombre: "Carta notarial",
     mensaje:
       "Estimado(a) {nombre}: Por medio de la presente carta notarial se le notifica que su deuda de {saldo} con {sponsor}, con {mora} de atraso, ha sido derivada a proceso judicial. Atentamente, Área Legal.",
+    descripcion: "Notificación legal que formaliza la derivación a proceso judicial.",
     estado: "Activo",
   },
   // Ejemplo desactivado: demuestra que una plantilla puede darse de baja sin eliminarla.
@@ -205,6 +216,7 @@ export const PLANTILLAS_SEED: PlantillaMensaje[] = [
     codigo: "PLT-007",
     nombre: "Mensaje de prueba (ejemplo)",
     mensaje: "Este es un mensaje de ejemplo para {nombre}, de parte de {sponsor}. Esta plantilla está desactivada y no se envía.",
+    descripcion: "Plantilla de ejemplo para probar la desactivación de un mensaje.",
     estado: "Inactivo",
   },
 ];
@@ -219,27 +231,28 @@ export type EstrategiaCobranza = {
   plantillaCodigo: string; // tipo de mensaje del catálogo de plantillas
   duracionDias: number; // cuánto dura la estrategia (admite medios días: 0.5, 1.5…)
   tarifa: number; // costo en soles de ejecutar la estrategia sobre un moroso
+  descripcion: string;
   estado: "Activo" | "Inactivo";
 };
 
 export const ESTRATEGIAS_SEED: EstrategiaCobranza[] = [
   // Cobranza temprana (leve)
-  { id: 1, codigo: "EST-01", nombre: "Estrategia 01", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-001"], plantillaCodigo: "PLT-001", duracionDias: 1, tarifa: 3, estado: "Activo" },
-  { id: 2, codigo: "EST-02", nombre: "Estrategia 02", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-001", duracionDias: 0.5, tarifa: 4, estado: "Activo" },
-  { id: 3, codigo: "EST-03", nombre: "Estrategia 03", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-002", "CAN-001"], plantillaCodigo: "PLT-002", duracionDias: 1.5, tarifa: 5, estado: "Activo" },
+  { id: 1, codigo: "EST-01", nombre: "Estrategia 01", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-001"], plantillaCodigo: "PLT-001", duracionDias: 1, tarifa: 3, descripcion: "Un SMS amistoso durante un día: el primer toque y el más económico.", estado: "Activo" },
+  { id: 2, codigo: "EST-02", nombre: "Estrategia 02", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-001", duracionDias: 0.5, tarifa: 4, descripcion: "Mensaje amistoso por WhatsApp: llega más rápido y se lee más.", estado: "Activo" },
+  { id: 3, codigo: "EST-03", nombre: "Estrategia 03", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-002", "CAN-001"], plantillaCodigo: "PLT-002", duracionDias: 1.5, tarifa: 5, descripcion: "Recordatorio combinado por WhatsApp y SMS para reforzar el aviso.", estado: "Activo" },
   // Cobranza tardía (intermedia)
-  { id: 4, codigo: "EST-04", nombre: "Estrategia 04", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-002", duracionDias: 0.5, tarifa: 6, estado: "Activo" },
-  { id: 5, codigo: "EST-05", nombre: "Estrategia 05", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2, tarifa: 7, estado: "Activo" },
-  { id: 6, codigo: "EST-06", nombre: "Estrategia 06", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002", "CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2.5, tarifa: 8, estado: "Activo" },
-  { id: 7, codigo: "EST-07", nombre: "Estrategia 07", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002", "CAN-003", "CAN-001"], plantillaCodigo: "PLT-004", duracionDias: 3.5, tarifa: 9, estado: "Activo" },
+  { id: 4, codigo: "EST-04", nombre: "Estrategia 04", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-002", duracionDias: 0.5, tarifa: 6, descripcion: "Recordatorio breve por WhatsApp para morosos que recién se atrasan.", estado: "Activo" },
+  { id: 5, codigo: "EST-05", nombre: "Estrategia 05", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2, tarifa: 7, descripcion: "Aviso formal por correo, con constancia escrita del atraso.", estado: "Activo" },
+  { id: 6, codigo: "EST-06", nombre: "Estrategia 06", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002", "CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2.5, tarifa: 8, descripcion: "Aviso formal por WhatsApp y correo a la vez, para más presión.", estado: "Activo" },
+  { id: 7, codigo: "EST-07", nombre: "Estrategia 07", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002", "CAN-003", "CAN-001"], plantillaCodigo: "PLT-004", duracionDias: 3.5, tarifa: 9, descripcion: "Advertencia por tres canales durante varios días: la más intensa del tramo.", estado: "Activo" },
   // Cobranza prejudicial
-  { id: 8, codigo: "EST-08", nombre: "Estrategia 08", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004"], plantillaCodigo: "PLT-004", duracionDias: 1, tarifa: 10, estado: "Activo" },
-  { id: 9, codigo: "EST-09", nombre: "Estrategia 09", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002"], plantillaCodigo: "PLT-005", duracionDias: 0.5, tarifa: 11, estado: "Activo" },
-  { id: 10, codigo: "EST-10", nombre: "Estrategia 10", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002", "CAN-003"], plantillaCodigo: "PLT-005", duracionDias: 2.5, tarifa: 12, estado: "Activo" },
+  { id: 8, codigo: "EST-08", nombre: "Estrategia 08", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004"], plantillaCodigo: "PLT-004", duracionDias: 1, tarifa: 10, descripcion: "Llamada automatizada de advertencia, con respuesta del moroso.", estado: "Activo" },
+  { id: 9, codigo: "EST-09", nombre: "Estrategia 09", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002"], plantillaCodigo: "PLT-005", duracionDias: 0.5, tarifa: 11, descripcion: "Ultimátum por llamada y WhatsApp: aviso final antes de lo legal.", estado: "Activo" },
+  { id: 10, codigo: "EST-10", nombre: "Estrategia 10", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002", "CAN-003"], plantillaCodigo: "PLT-005", duracionDias: 2.5, tarifa: 12, descripcion: "Ultimátum sostenido por llamada, WhatsApp y correo.", estado: "Activo" },
   // Cobranza judicial
-  { id: 11, codigo: "EST-11", nombre: "Estrategia 11", tipoCobranza: "Cobranza judicial", canalCodigos: ["CAN-005"], plantillaCodigo: "PLT-006", duracionDias: 1, tarifa: 60, estado: "Activo" },
+  { id: 11, codigo: "EST-11", nombre: "Estrategia 11", tipoCobranza: "Cobranza judicial", canalCodigos: ["CAN-005"], plantillaCodigo: "PLT-006", duracionDias: 1, tarifa: 60, descripcion: "Carta notarial entregada por dron al domicilio; inicia el proceso judicial.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que una estrategia puede darse de baja sin eliminarla.
-  { id: 12, codigo: "EST-12", nombre: "Estrategia de prueba (ejemplo)", tipoCobranza: "Cobranza Extra (ejemplo)", canalCodigos: ["CAN-006"], plantillaCodigo: "PLT-007", duracionDias: 1, tarifa: 0, estado: "Inactivo" },
+  { id: 12, codigo: "EST-12", nombre: "Estrategia de prueba (ejemplo)", tipoCobranza: "Cobranza Extra (ejemplo)", canalCodigos: ["CAN-006"], plantillaCodigo: "PLT-007", duracionDias: 1, tarifa: 0, descripcion: "Estrategia de ejemplo para probar la desactivación.", estado: "Inactivo" },
 ];
 
 // --- Catálogo de autómata: el robot de envío masivo por canal y su capacidad ---
@@ -247,19 +260,21 @@ export type AutomataCatalogo = {
   id: number;
   codigo: string;
   nombre: string;
-  capacidadMinima: number | null;
-  capacidadPorDia: number;
+  /** Rango de mensajes que el autómata puede procesar en un día. */
+  capacidadMinPorDia: number;
+  capacidadMaxPorDia: number;
+  descripcion: string;
   estado: "Activo" | "Inactivo";
 };
 
 export const AUTOMATA_SEED: AutomataCatalogo[] = [
-  { id: 1, codigo: "AUT-001", nombre: "Autómata de SMS", capacidadMinima: null, capacidadPorDia: 2500, estado: "Activo" },
-  { id: 2, codigo: "AUT-002", nombre: "Autómata de Whatsapp", capacidadMinima: null, capacidadPorDia: 3000, estado: "Activo" },
-  { id: 3, codigo: "AUT-003", nombre: "Autómata de correos", capacidadMinima: null, capacidadPorDia: 1000, estado: "Activo" },
-  { id: 4, codigo: "AUT-004", nombre: "Autómata de llamadas", capacidadMinima: null, capacidadPorDia: 500, estado: "Activo" },
-  { id: 5, codigo: "AUT-005", nombre: "Autómata de dron", capacidadMinima: null, capacidadPorDia: 40, estado: "Activo" },
+  { id: 1, codigo: "AUT-001", nombre: "Autómata de SMS", capacidadMinPorDia: 500, capacidadMaxPorDia: 2500, descripcion: "Robot que envía los SMS masivos de las estrategias.", estado: "Activo" },
+  { id: 2, codigo: "AUT-002", nombre: "Autómata de Whatsapp", capacidadMinPorDia: 800, capacidadMaxPorDia: 3000, descripcion: "Robot que envía los mensajes de WhatsApp y recibe las respuestas.", estado: "Activo" },
+  { id: 3, codigo: "AUT-003", nombre: "Autómata de correos", capacidadMinPorDia: 200, capacidadMaxPorDia: 1000, descripcion: "Robot que envía los avisos formales por correo electrónico.", estado: "Activo" },
+  { id: 4, codigo: "AUT-004", nombre: "Autómata de llamadas", capacidadMinPorDia: 100, capacidadMaxPorDia: 500, descripcion: "Robot de llamadas IVR con menú de respuesta para el moroso.", estado: "Activo" },
+  { id: 5, codigo: "AUT-005", nombre: "Autómata de dron", capacidadMinPorDia: 5, capacidadMaxPorDia: 40, descripcion: "Dron que entrega las cartas notariales en el domicilio del moroso.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un autómata puede darse de baja sin eliminarlo.
-  { id: 6, codigo: "AUT-006", nombre: "Autómata de Telegram (ejemplo)", capacidadMinima: null, capacidadPorDia: 800, estado: "Inactivo" },
+  { id: 6, codigo: "AUT-006", nombre: "Autómata de Telegram (ejemplo)", capacidadMinPorDia: 100, capacidadMaxPorDia: 800, descripcion: "Autómata de ejemplo para probar la desactivación.", estado: "Inactivo" },
 ];
 
 // --- Helpers de formato compartidos por las pantallas ---

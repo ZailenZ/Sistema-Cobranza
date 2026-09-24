@@ -26,9 +26,7 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
   parámetros y consultas).
 - **Sponsor:** Operativo en **modo autoservicio** — el sponsor es la empresa/
   entidad acreedora que encarga su cartera de morosos al sistema. Este perfil
-  solo reserva y gestiona tickets de **su propia cartera**; no debe confundirse
-  con "operario/operador" (catálogo de personal interno asignable a tickets, no
-  un perfil de acceso).
+  solo trabaja los morosos de **su propia cartera**.
 - **Técnico:** módulo Técnico — el que va tocando sobre la base de datos: Monitor
   Batch, mantenimiento de BD y backup.
 
@@ -42,7 +40,8 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
     - **Catálogo de servicio** (tipos de cobranza): rango de mora/saldo que define
       la clasificación, y los canales que usa con su frecuencia (cuántos mensajes
       al día por cada canal).
-    - **Catálogo de canales**: medio de contacto y su naturaleza (digital/físico).
+    - **Catálogo de canales**: medio de contacto, su naturaleza (digital/físico) y el
+      horario diario en que se permite contactar por ahí.
     - **Catálogo de plantillas**: el tipo de mensaje (Amistoso, Recordatorio,
       Aviso formal, Advertencia, Ultimátum, Carta notarial) y su texto real.
     - **Catálogo de estrategias**: cómo se hostiga a un moroso — canal(es) + tipo
@@ -87,9 +86,10 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
   **CE** (cerrado).
 - No existe un "catálogo de operarios": los operadores del sistema son los
   **autómatas**, no personas.
-- El prototipo **arranca vacío**: solo se siembran los catálogos y las empresas
-  sponsor. No hay morosos, deudas ni gestiones de ejemplo — todo nace de que el
-  sponsor suba su lista de morosos.
+- La cartera del sponsor con el que se inicia sesión (Financiera Andina S.A.)
+  **arranca vacía**: su flujo nace de subir la lista de morosos. Los otros dos
+  sponsors sí traen una cartera de muestra, para que las consultas gerenciales
+  tengan contenido que mostrar.
 - **Entrega cobranza** ya no es un formulario manual: es un reporte de solo
   lectura de los envíos automáticos de cobranza (SMS/WhatsApp/correo/carta) y
   la respuesta simulada del moroso. El reporte de gestión de deudas es el

@@ -51,8 +51,8 @@ There is no test suite and no lint script configured.
   - Five `MOCK_USERS` (one per role) stand in for a real user directory. **Sponsor is the odd one out**: it's a
     real login profile, not just the `Sponsor` data entity — it's the client company's own self-service user, who
     reserves/works tickets only from their own portfolio. Its `MockUser.sponsorCodigo` links it to a `Sponsor`
-    record's `codigo` in `localDb.ts`. Don't confuse it with the `operarios` catalog (internal staff codes like
-    `OPE-001` assignable to a ticket) — that's unrelated to login roles.
+    record's `codigo` in `localDb.ts`. Don't confuse it with the `automata` catalog (the bots that actually
+    send each gestión) — those are not users and have nothing to do with login roles.
   - `ReservarTickets.tsx`/`EntregaCobranza.tsx`/`ReporteGestionDeudas.tsx` scope their data to the current sponsor's
     own portfolio when `role === "Sponsor"` (matching `Deuda.sponsorId` against the sponsor's own `Sponsor.id`);
     for every other role they show the unscoped, all-sponsors view (this is also how `Administrador` demos the
@@ -66,7 +66,7 @@ There is no test suite and no lint script configured.
   `getX()`/`setX()` functions that JSON-serialize to a `swcobranza:` prefixed key; there is no async/API layer to mirror.
   There is **no `operarios` catalog** — the "operators" in this system are the `automata` (bots), not people.
 - [src/app/store/catalogSeed.ts](src/app/store/catalogSeed.ts) is the **single source of truth for catalog seed
-  data and types** (`ServicioCobranza`, `CanalContacto`, `OperarioCatalogo`, `PlantillaMensaje`, `AutomataCatalogo`
+  data and types** (`ServicioCobranza`, `CanalContacto`, `EstrategiaCobranza`, `PlantillaMensaje`, `AutomataCatalogo`
   + their `*_SEED` arrays), imported by both `seedAll.ts` (localStorage seeding) and
   [ParamsMaintenance.tsx](src/app/components/gerencial/ParamsMaintenance.tsx) (catalog CRUD screen) — don't
   reintroduce a second copy of this data in either place. `ensureCatalogSeeded(id, seed)` seeds one catalog if empty.
@@ -85,11 +85,11 @@ There is no test suite and no lint script configured.
   - Every catalog's `*_SEED` includes one deliberately **Inactivo** example row (e.g. `SRV-005`, `CAN-006`,
     `EST-12`) to demonstrate that a catalog entry can be deactivated without deleting it — keep this pattern when
     adding catalog entries; don't remove those example rows.
-- [src/app/store/seedAll.ts](src/app/store/seedAll.ts) (`seedAllIfEmpty`) seeds **only the catalogs and the
-  `Sponsor` companies** — deliberately **no morosos, deudas, tickets or envíos**. The prototype starts empty on
-  purpose: the sponsor must upload their list in "Reservar tickets" for anything to exist, so every screen shows
-  a real from-zero state (and so does the Administrador's "Resetear prototipo"). Don't reintroduce demo morosos
-  "so a screen isn't empty" — give the screen an empty state instead. It's invoked once from `MainLayout`'s
+- [src/app/store/seedAll.ts](src/app/store/seedAll.ts) (`seedAllIfEmpty`) seeds the catalogs, the `Sponsor`
+  companies, and a small sample portfolio for SPN-002/SPN-003 only (`CARTERA_MUESTRA`), so the Gerencial
+  consultas have something to show. **SPN-001 (Financiera Andina) is left deliberately empty** — that is the
+  sponsor the demo logs in as, and its flow must start from zero by uploading the debtor list. Don't seed
+  morosos for SPN-001 "so a screen isn't empty" — give the screen an empty state instead. It's invoked once from `MainLayout`'s
   `useEffect`, and again (idempotently) at the top of every Operativo screen's render.
 - [src/app/store/sponsorFlow.ts](src/app/store/sponsorFlow.ts) holds the whole Sponsor simulation, in two steps
   that must stay separate:

@@ -312,6 +312,46 @@ export function ReservarTickets() {
           </div>
         )}
 
+        {/* Referencia, arriba de todo: qué tipos de cobranza existen y en qué consiste cada uno */}
+        {misSponsor && (
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h3 className="text-lg font-semibold text-foreground">Tipos de cobranza que maneja el sistema</h3>
+            <p className="mb-4 text-sm text-muted-foreground">
+              Solo de referencia: tú no eliges el tipo, el sistema clasifica a cada moroso según sus días de mora
+              y luego eliges con qué estrategia trabajarlo.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {servicios
+                .filter((s) => s.estado === "Activo")
+                .map((s) => {
+                  const suyas = estrategiasDeServicio(s.tipoCobranza, estrategias);
+                  return (
+                    <div key={s.codigo} className="rounded-xl border border-border p-5">
+                      <p className="text-base font-semibold text-foreground">{s.tipoCobranza}</p>
+                      <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{s.descripcion}</p>
+                      <p className="mt-1.5 text-sm text-muted-foreground">
+                        Mora {s.moraMin}–{s.moraMax ?? "a más"} días · Saldo S/ {s.saldoMin.toLocaleString()}–
+                        {s.saldoMax ? s.saldoMax.toLocaleString() : "a más"}
+                      </p>
+                      <p className="mt-1.5 text-sm text-muted-foreground">
+                        Canales: {formatCanalesFrecuencia(s.canales, canales)}
+                      </p>
+                      <p className="mt-1.5 text-sm text-muted-foreground">
+                        {suyas.length} estrategia(s) disponible(s): {suyas.map((e) => e.codigo).join(", ") || "—"}
+                      </p>
+                      <button
+                        onClick={() => setSearchParams({ tipo: s.codigo })}
+                        className="mt-3 text-sm font-medium text-primary hover:underline"
+                      >
+                        Ver mis morosos de este tipo →
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         {/* Paso 1: subir la lista de morosos (simulado) */}
         {misSponsor && panelCargaAbierto && (
           <div className="rounded-xl border border-border bg-card p-7">
@@ -510,43 +550,6 @@ export function ReservarTickets() {
           )}
         </div>
 
-        {/* Referencia: tipos de cobranza del sistema y sus canales/frecuencia */}
-        {misSponsor && (
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h3 className="text-lg font-semibold text-foreground">Tipos de cobranza que maneja el sistema</h3>
-            <p className="mb-4 text-sm text-muted-foreground">
-              Solo de referencia: tú no eliges el tipo, el sistema clasifica a cada moroso según sus días de mora.
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {servicios
-                .filter((s) => s.estado === "Activo")
-                .map((s) => {
-                  const suyas = estrategiasDeServicio(s.tipoCobranza, estrategias);
-                  return (
-                    <div key={s.codigo} className="rounded-xl border border-border p-5">
-                      <p className="text-base font-semibold text-foreground">{s.tipoCobranza}</p>
-                      <p className="mt-1.5 text-sm text-muted-foreground">
-                        Mora {s.moraMin}–{s.moraMax ?? "a más"} días · Saldo S/ {s.saldoMin.toLocaleString()}–
-                        {s.saldoMax ? s.saldoMax.toLocaleString() : "a más"}
-                      </p>
-                      <p className="mt-1.5 text-sm text-muted-foreground">
-                        Canales: {formatCanalesFrecuencia(s.canales, canales)}
-                      </p>
-                      <p className="mt-1.5 text-sm text-muted-foreground">
-                        {suyas.length} estrategia(s) disponible(s): {suyas.map((e) => e.codigo).join(", ") || "—"}
-                      </p>
-                      <button
-                        onClick={() => setSearchParams({ tipo: s.codigo })}
-                        className="mt-3 text-sm font-medium text-primary hover:underline"
-                      >
-                        Ver mis morosos de este tipo →
-                      </button>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        )}
       </div>
 
       {ticketEnEdicion && (
