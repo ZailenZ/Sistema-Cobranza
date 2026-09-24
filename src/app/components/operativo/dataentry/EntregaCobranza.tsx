@@ -19,6 +19,7 @@ import {
   type EstrategiaCobranza,
   type PlantillaMensaje,
   type ServicioCobranza,
+  type TipoMoroso,
 } from "../../../store/catalogSeed";
 import { getCurrentUser } from "../../../store/session";
 import { EnvioDetalleModal, type EnvioDetalleData } from "../EnvioDetalleModal";
@@ -45,6 +46,13 @@ export function EntregaCobranza() {
   const canales = useMemo(() => getCatalog<CanalContacto>("canales", []), []);
   const plantillas = useMemo(() => getCatalog<PlantillaMensaje>("plantillas", []), []);
   const servicios = useMemo(() => getCatalog<ServicioCobranza>("servicios", []), []);
+  const tiposMoroso = useMemo(() => getCatalog<TipoMoroso>("morosos", []), []);
+
+  /** Perfil del Catálogo de Morosos en el que cae un deudor según sus días de mora. */
+  const tipoMorosoDe = (diasMora: number) =>
+    tiposMoroso.find(
+      (m) => m.estado === "Activo" && diasMora >= m.moraMin && (m.moraMax === null || diasMora <= m.moraMax),
+    )?.nombre || "—";
   const estrategias = useMemo(() => getCatalog<EstrategiaCobranza>("estrategias", []), []);
 
   const [detalle, setDetalle] = useState<EnvioDetalleData | null>(null);
@@ -82,6 +90,7 @@ export function EntregaCobranza() {
       plantillaNombre: plantillaDe(envio.plantillaCodigo)?.nombre || "—",
       plantillaMensaje: plantillaDe(envio.plantillaCodigo)?.mensaje,
       tipoCobranza: servicio?.tipoCobranza || "—",
+      tipoMoroso: tipoMorosoDe(deuda.diasMora),
       sponsorNombre: sponsor?.razonSocial || "—",
       saldo: deuda.saldo,
       diasMora: deuda.diasMora,
@@ -139,6 +148,10 @@ export function EntregaCobranza() {
                   render: (i: EnvioCobranza) => plantillaDe(i.plantillaCodigo)?.nombre || "—",
                 },
                 { key: "mora", label: "Mora", render: (i: EnvioCobranza) => `${deudaOf(i.deudaId)?.diasMora ?? "—"} días` },
+                {
+                  key: "tipoMoroso", label: "Tipo de moroso",
+                  render: (i: EnvioCobranza) => tipoMorosoDe(deudaOf(i.deudaId)?.diasMora ?? 0),
+                },
                 { key: "saldo", label: "Saldo", render: (i: EnvioCobranza) => fmtSol(deudaOf(i.deudaId)?.saldo ?? 0) },
                 { key: "tarifa", label: "Tarifa", render: (i: EnvioCobranza) => fmtSol(i.tarifa) },
                 { key: "fechaEnvio", label: "Fecha", sortable: true },

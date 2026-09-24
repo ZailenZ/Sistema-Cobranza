@@ -152,10 +152,6 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
         { key: "moraMax",     label: "Mora máx. (días)", render: (i: any) => (i.moraMax === null || i.moraMax === "" ? "A más" : i.moraMax) },
         { key: "saldoMin",    label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
         { key: "saldoMax",    label: "Saldo máx. (S/)",  render: (i: any) => (i.saldoMax === null || i.saldoMax === "" ? "A más" : `S/ ${Number(i.saldoMax).toLocaleString()}`) },
-        {
-          key: "__servicios", label: "Tipo de cobranza que le aplica",
-          render: (i: any) => ctx.servicios.find((s) => s.tipoMorosoCodigo === i.codigo)?.tipoCobranza || "—",
-        },
         { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
       ];

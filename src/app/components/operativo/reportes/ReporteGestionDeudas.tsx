@@ -31,6 +31,7 @@ import { seedAllIfEmpty } from "../../../store/seedAll";
 import {
   formatListaCanales,
   type CanalContacto,
+  type TipoMoroso,
   type PlantillaMensaje,
   type ServicioCobranza,
 } from "../../../store/catalogSeed";
@@ -111,6 +112,13 @@ export function ReporteGestionDeudas() {
   const canales = useMemo(() => getCatalog<CanalContacto>("canales", []), []);
   const plantillas = useMemo(() => getCatalog<PlantillaMensaje>("plantillas", []), []);
   const servicios = useMemo(() => getCatalog<ServicioCobranza>("servicios", []), []);
+  const tiposMoroso = useMemo(() => getCatalog<TipoMoroso>("morosos", []), []);
+
+  /** Perfil del Catálogo de Morosos en el que cae una deuda según sus días de mora. */
+  const tipoMorosoDe = (diasMora: number) =>
+    tiposMoroso.find(
+      (m) => m.estado === "Activo" && diasMora >= m.moraMin && (m.moraMax === null || diasMora <= m.moraMax),
+    )?.nombre || "—";
 
   const [detalle, setDetalle] = useState<EnvioDetalleData | null>(null);
   const [vista, setVista] = useState<Vista>("tabla");
@@ -296,6 +304,10 @@ export function ReporteGestionDeudas() {
               {
                 key: "deudorId", label: "Moroso", sortable: true,
                 render: (d: (typeof misDeudas)[number]) => deudorOf(d.deudorId)?.nombre || d.deudorId,
+              },
+              {
+                key: "tipoMoroso", label: "Tipo de moroso",
+                render: (d: (typeof misDeudas)[number]) => tipoMorosoDe(d.diasMora),
               },
               {
                 key: "tipoCobranza", label: "Tipo de cobranza",

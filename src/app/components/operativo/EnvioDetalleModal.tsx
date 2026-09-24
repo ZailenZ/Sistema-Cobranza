@@ -24,6 +24,8 @@ export type EnvioDetalleData = {
   /** Texto de la plantilla del catálogo (con marcadores {nombre}/{saldo}/{mora}/{sponsor}), si tiene una asociada. */
   plantillaMensaje?: string;
   tipoCobranza: string;
+  /** Perfil del Catálogo de Morosos en el que cae el deudor (por sus días de mora). */
+  tipoMoroso?: string;
   sponsorNombre: string;
   saldo: number;
   diasMora: number;
@@ -64,6 +66,7 @@ export function EnvioDetalleModal({
     plantillaNombre,
     plantillaMensaje,
     tipoCobranza,
+    tipoMoroso,
     sponsorNombre,
     saldo,
     diasMora,
@@ -99,6 +102,7 @@ export function EnvioDetalleModal({
                 {deudorNombre}
               </p>
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-3">
+                {tipoMoroso && <Campo label="Tipo de moroso" value={tipoMoroso} />}
                 <Campo label="Tipo de cobranza" value={tipoCobranza} />
                 {estrategiaTexto && <Campo label="Estrategia" value={estrategiaTexto} />}
                 <Campo label="Respuesta" value={envio.respuesta} />

@@ -4,8 +4,9 @@ import { AlertTriangle, DollarSign, UserX, Users } from "lucide-react";
 import { PageHeader } from "../../shared/PageHeader";
 import { KPICard } from "../../shared/KPICard";
 import { DataTable } from "../../shared/DataTable";
-import { getDeudas, getDeudores, getSponsors } from "../../../store/localDb";
+import { getCatalog, getDeudas, getDeudores, getSponsors } from "../../../store/localDb";
 import { seedAllIfEmpty } from "../../../store/seedAll";
+import type { TipoMoroso } from "../../../store/catalogSeed";
 
 const fmtSol = (n: number) => `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2 })}`;
 
@@ -29,8 +30,15 @@ export function Morosos() {
   const deudores = useMemo(() => getDeudores(), []);
   const deudas = useMemo(() => getDeudas(), []);
   const sponsors = useMemo(() => getSponsors(), []);
+  const tiposMoroso = useMemo(() => getCatalog<TipoMoroso>("morosos", []), []);
 
   const sponsorNombre = (id: string) => sponsors.find((s) => s.id === id)?.razonSocial || id;
+
+  /** Perfil del Catálogo de Morosos en el que cae un deudor según sus días de mora. */
+  const tipoMorosoDe = (diasMora: number) =>
+    tiposMoroso.find(
+      (m) => m.estado === "Activo" && diasMora >= m.moraMin && (m.moraMax === null || diasMora <= m.moraMax),
+    )?.nombre || "—";
 
   const rows = useMemo(
     () =>
@@ -39,6 +47,7 @@ export function Morosos() {
         return {
           ...d,
           sponsorNombre: sponsorNombre(d.sponsorId),
+          tipoMoroso: tipoMorosoDe(d.diasMoraMax),
           numDeudas: deudasDeudor.length,
         };
       }),
@@ -127,6 +136,7 @@ export function Morosos() {
             { key: "numDeudas", label: "N° Deudas", sortable: true },
             { key: "saldoTotal", label: "Saldo Total", sortable: true, render: (i: any) => fmtSol(i.saldoTotal) },
             { key: "diasMoraMax", label: "Días Mora Máx.", sortable: true },
+            { key: "tipoMoroso", label: "Tipo de moroso", sortable: true },
             { key: "estado", label: "Estado", render: (i: any) => estadoBadge(i.estado) },
           ]}
           data={filtered}

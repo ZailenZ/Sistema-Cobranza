@@ -13,7 +13,7 @@ import {
   type Sponsor,
 } from "../../../store/localDb";
 import { seedAllIfEmpty } from "../../../store/seedAll";
-import type { ServicioCobranza } from "../../../store/catalogSeed";
+import type { ServicioCobranza, TipoMoroso } from "../../../store/catalogSeed";
 
 const fmtSol = (n: number) => `S/ ${n.toLocaleString("es-PE")}`;
 
@@ -27,6 +27,13 @@ export function Sponsors() {
   const deudas = useMemo(() => getDeudas(), []);
   const tickets = useMemo(() => getTicketsGestion(), []);
   const servicios = useMemo(() => getCatalog<ServicioCobranza>("servicios", []), []);
+  const tiposMoroso = useMemo(() => getCatalog<TipoMoroso>("morosos", []), []);
+
+  /** Perfil del Catálogo de Morosos en el que cae un deudor según sus días de mora. */
+  const tipoMorosoDe = (diasMora: number) =>
+    tiposMoroso.find(
+      (m) => m.estado === "Activo" && diasMora >= m.moraMin && (m.moraMax === null || diasMora <= m.moraMax),
+    )?.nombre || "—";
 
   const rubros = useMemo(() => [...new Set(sponsors.map((s) => s.rubro))].sort(), [sponsors]);
 
@@ -38,6 +45,7 @@ export function Sponsors() {
         const ticket = tickets.find((t) => t.deudaId === deudaDelDeudor?.id);
         return {
           ...d,
+          tipoMoroso: tipoMorosoDe(d.diasMoraMax),
           tipoCobranza: servicios.find((s) => s.codigo === deudaDelDeudor?.servicioCodigo)?.tipoCobranza || "—",
           enGestion: ticket?.estado === "RE" ? "En gestión" : ticket ? "Sin estrategia" : "—",
         };
@@ -136,6 +144,7 @@ export function Sponsors() {
                     { key: "documento", label: "Documento" },
                     { key: "diasMoraMax", label: "Tiempo de mora", sortable: true, render: (m: any) => `${m.diasMoraMax} días` },
                     { key: "saldoTotal", label: "Saldo pendiente", sortable: true, render: (m: any) => fmtSol(m.saldoTotal) },
+                    { key: "tipoMoroso", label: "Tipo de moroso" },
                     { key: "tipoCobranza", label: "Tipo de cobranza" },
                     { key: "enGestion", label: "Estado" },
                   ]}
