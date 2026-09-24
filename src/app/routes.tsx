@@ -16,6 +16,10 @@ import { ReservarTickets } from "./components/operativo/dataentry/ReservarTicket
 import { EntregaCobranza } from "./components/operativo/dataentry/EntregaCobranza";
 import { ReporteGestionDeudas } from "./components/operativo/reportes/ReporteGestionDeudas";
 import { BatchMonitor } from "./components/tecnico/BatchMonitor";
+import { FabricacionTickets } from "./components/aplicativo/FabricacionTickets";
+import { ActualizacionProtocolos } from "./components/aplicativo/ActualizacionProtocolos";
+import { GeneracionEstadisticas } from "./components/aplicativo/GeneracionEstadisticas";
+import { PrecalculoKPIs } from "./components/aplicativo/PrecalculoKPIs";
 import { MantenimientoBD } from "./components/tecnico/MantenimientoBD";
 import { Backup } from "./components/tecnico/Backup";
 import { getCurrentRole, ROLE_HOME } from "./store/session";
@@ -57,6 +61,13 @@ export const router = createHashRouter([
 
       // --- Reportes operativos ---
       { path: "operativo/reportes/gestion-deudas", Component: ReporteGestionDeudas },
+
+      // --- Aplicativo (procesos batch, solo consulta) ---
+      { path: "aplicativo/monitor-batch", Component: BatchMonitor },
+      { path: "aplicativo/fabricacion-tickets", Component: FabricacionTickets },
+      { path: "aplicativo/actualizacion-protocolos", Component: ActualizacionProtocolos },
+      { path: "aplicativo/generacion-estadisticas", Component: GeneracionEstadisticas },
+      { path: "aplicativo/precalculo-kpis", Component: PrecalculoKPIs },
 
       // --- Técnico / Administrativo (gated por rol) ---
       { path: "tecnico/batch-monitor", Component: BatchMonitor },

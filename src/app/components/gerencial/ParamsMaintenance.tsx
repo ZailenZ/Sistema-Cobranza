@@ -12,8 +12,7 @@ import {
   SERVICIOS_SEED,
   ensureCatalogSeeded,
   formatCanalesFrecuencia,
-  formatRangoMora,
-  formatRangoSaldo,
+  formatRangoIncidencias,
   tipoMorosoDeServicio,
   formatDuracion,
   formatListaCanales,
@@ -82,7 +81,7 @@ type FieldOption = string | { value: string; label: string };
 interface FormField {
   key: string;
   label: string;
-  type: "text" | "select" | "number" | "textarea" | "time" | "canalesFrecuencia" | "multicanal";
+  type: "text" | "select" | "number" | "textarea" | "time" | "canalesFrecuencia" | "multicanal" | "multiestrategia";
   options?: FieldOption[];
   allowCustom?: boolean;
   optional?: boolean;
@@ -97,6 +96,8 @@ const optionLabel = (o: FieldOption) => (typeof o === "string" ? o : o.label);
  *  para que las reglas de clasificación comparen números y no texto. */
 const CAMPOS_NUMERICOS: Record<string, { key: string; nullable?: boolean }[]> = {
   morosos: [
+    { key: "incidenciasMin" },
+    { key: "incidenciasMax", nullable: true },
     { key: "moraMin" },
     { key: "moraMax", nullable: true },
     { key: "saldoMin" },
@@ -131,15 +132,14 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
           key: "tipoMorosoCodigo", label: "Tipo de moroso", sortable: true,
           render: (i: any) => tipoMorosoDeServicio(i, ctx.morosos)?.nombre || "—",
         },
-        { key: "__mora",  label: "Mora",  render: (i: any) => formatRangoMora(tipoMorosoDeServicio(i, ctx.morosos)) },
-        { key: "__saldo", label: "Saldo", render: (i: any) => formatRangoSaldo(tipoMorosoDeServicio(i, ctx.morosos)) },
         { key: "canales",      label: "Canales y frecuencia", render: (i: any) => formatCanalesFrecuencia(i.canales, ctx.canales) },
         { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         {
-          key: "__estrategias", label: "Estrategias",
+          key: "estrategiaCodigos", label: "Estrategias",
           render: (i: any) => {
-            const n = ctx.estrategias.filter((e) => e.tipoCobranza === i.tipoCobranza && e.estado === "Activo").length;
-            return `${n} estrategia(s)`;
+            const codigos: string[] = i.estrategiaCodigos || [];
+            const activas = ctx.estrategias.filter((e) => codigos.includes(e.codigo) && e.estado === "Activo");
+            return activas.length === 0 ? "—" : `${activas.length}: ${activas.map((e) => e.codigo).join(", ")}`;
           },
         },
         { key: "estado",       label: "Estado", render: (i: any) => estadoBadge(i.estado) },
@@ -148,6 +148,7 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
       return [
         { key: "codigo",      label: "Código",          sortable: true },
         { key: "nombre",      label: "Tipo de moroso",  sortable: true },
+        { key: "__incidencias", label: "N° de incidencias", render: (i: any) => formatRangoIncidencias(i) },
         { key: "moraMin",     label: "Mora mín. (días)" },
         { key: "moraMax",     label: "Mora máx. (días)", render: (i: any) => (i.moraMax === null || i.moraMax === "" ? "A más" : i.moraMax) },
         { key: "saldoMin",    label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
@@ -159,6 +160,8 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
       return [
         { key: "codigo",      label: "Código",            type: "text",   optional: true, placeholder: "Ej: MOR-006" },
         { key: "nombre",      label: "Tipo de moroso",    type: "text",   placeholder: "Ej: Moroso ocasional" },
+        { key: "incidenciasMin", label: "Incidencias mínimas", type: "number", placeholder: "Ej: 0", help: "Cuántas veces ha caído en mora." },
+        { key: "incidenciasMax", label: "Incidencias máximas", type: "number", optional: true, placeholder: "Vacío = a más" },
         { key: "moraMin",     label: "Mora mínima (días)", type: "number", placeholder: "Ej: 1" },
         { key: "moraMax",     label: "Mora máxima (días)", type: "number", optional: true, placeholder: "Vacío = a más" },
         { key: "saldoMin",    label: "Saldo mínimo (S/)",  type: "number", placeholder: "Ej: 500" },
@@ -188,7 +191,14 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
       return [
         { key: "codigo",       label: "Código",            sortable: true },
         { key: "nombre",       label: "Estrategia",        sortable: true },
-        { key: "tipoCobranza", label: "Tipo de Cobranza",  sortable: true },
+        {
+          key: "__servicio", label: "Usada por",
+          render: (i: any) =>
+            ctx.servicios
+              .filter((s) => (s.estrategiaCodigos || []).includes(i.codigo))
+              .map((s) => s.tipoCobranza)
+              .join(", ") || "—",
+        },
         { key: "canalCodigos", label: "Canal(es) utilizado(s)", render: (i: any) => formatListaCanales(i.canalCodigos, ctx.canales) },
         {
           key: "plantillaCodigo", label: "Tipo de mensaje",
@@ -226,7 +236,6 @@ function getCategoryData(cat: string): any[] {
 
 function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
   const canalNombreOptions = ctx.canales.map((c) => c.nombre);
-  const tipoCobranzaOptions = ctx.servicios.map((s) => s.tipoCobranza);
   const plantillaOptions: FieldOption[] = ctx.plantillas.map((p) => ({ value: p.codigo, label: p.nombre }));
   const tipoMorosoOptions: FieldOption[] = ctx.morosos.map((m) => ({ value: m.codigo, label: `${m.nombre} (${m.codigo})` }));
 
@@ -241,6 +250,12 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
           type: "select",
           options: tipoMorosoOptions,
           help: "Los rangos de mora y de saldo de este servicio salen del tipo de moroso elegido (Catálogo de Morosos).",
+        },
+        {
+          key: "estrategiaCodigos",
+          label: "Estrategias de hostigamiento",
+          type: "multiestrategia",
+          help: "Marca las estrategias que puede usar este tipo de cobranza. La relación servicio ↔ estrategia se define aquí.",
         },
         {
           key: "canales",
@@ -273,7 +288,6 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
       return [
         { key: "codigo",          label: "Código de Estrategia", type: "text",   optional: true, placeholder: "Ej: EST-13" },
         { key: "nombre",          label: "Estrategia",           type: "text",   placeholder: "Ej: Estrategia 12" },
-        { key: "tipoCobranza",    label: "Tipo de Cobranza",     type: "select", options: tipoCobranzaOptions },
         { key: "canalCodigos",    label: "Canal(es) utilizado(s)", type: "multicanal", help: "Una estrategia puede hostigar por varios canales a la vez." },
         { key: "plantillaCodigo", label: "Tipo de mensaje",      type: "select", options: plantillaOptions },
         { key: "duracionDias",    label: "Duración (días)",      type: "number", placeholder: "Ej: 1.5" },
@@ -299,6 +313,14 @@ function formatFieldValue(field: FormField, item: any, ctx: CatalogCtx) {
   const raw = item[field.key];
   if (field.type === "canalesFrecuencia") return formatCanalesFrecuencia(raw, ctx.canales);
   if (field.type === "multicanal") return formatListaCanales(raw, ctx.canales);
+  if (field.type === "multiestrategia") {
+    const codigos: string[] = Array.isArray(raw) ? raw : [];
+    return codigos.length === 0
+      ? "—"
+      : codigos
+          .map((c) => ctx.estrategias.find((e) => e.codigo === c)?.nombre || c)
+          .join(", ");
+  }
   if (field.key === "plantillaCodigo") return ctx.plantillas.find((p) => p.codigo === raw)?.nombre || "—";
   if (raw === "" || raw === undefined || raw === null) return "—";
   return String(raw);
@@ -355,6 +377,42 @@ function CanalesFrecuenciaEditor({
 }
 
 /** Selección múltiple de canales (para una estrategia). */
+/** Selección múltiple de estrategias: aquí se define qué estrategias puede usar un servicio. */
+function MultiestrategiaEditor({
+  value,
+  estrategias,
+  onChange,
+}: {
+  value: string[];
+  estrategias: EstrategiaCobranza[];
+  onChange: (next: string[]) => void;
+}) {
+  const seleccionados = new Set(value || []);
+  const toggle = (codigo: string, on: boolean) => {
+    const next = new Set(seleccionados);
+    if (on) next.add(codigo);
+    else next.delete(codigo);
+    onChange(estrategias.filter((e) => next.has(e.codigo)).map((e) => e.codigo));
+  };
+
+  return (
+    <div className="max-h-48 space-y-2 overflow-y-auto rounded-lg border border-border p-3">
+      {estrategias.map((e) => (
+        <label key={e.codigo} className="flex items-center gap-2 text-sm text-foreground">
+          <input
+            type="checkbox"
+            checked={seleccionados.has(e.codigo)}
+            onChange={(ev) => toggle(e.codigo, ev.target.checked)}
+          />
+          {e.codigo} · {e.nombre}
+          <span className="text-xs text-muted-foreground">S/ {Number(e.tarifa).toLocaleString()}</span>
+          {e.estado !== "Activo" && <span className="text-xs text-muted-foreground">(inactivo)</span>}
+        </label>
+      ))}
+    </div>
+  );
+}
+
 function MulticanalEditor({
   value,
   canales,
@@ -407,7 +465,7 @@ function CatalogModal({ category, ctx, editingItem, onClose, onSave }: ModalProp
       initialState[f.key] = editingItem[f.key];
       return;
     }
-    if (f.type === "canalesFrecuencia" || f.type === "multicanal") initialState[f.key] = [];
+    if (f.type === "canalesFrecuencia" || f.type === "multicanal" || f.type === "multiestrategia") initialState[f.key] = [];
     else if (f.type === "select" && f.options?.length) initialState[f.key] = optionValue(f.options[0]);
     else initialState[f.key] = "";
   });
@@ -449,6 +507,12 @@ function CatalogModal({ category, ctx, editingItem, onClose, onSave }: ModalProp
                 <CanalesFrecuenciaEditor
                   value={form[field.key] || []}
                   canales={ctx.canales}
+                  onChange={(next) => handleChange(field.key, next)}
+                />
+              ) : field.type === "multiestrategia" ? (
+                <MultiestrategiaEditor
+                  value={form[field.key] || []}
+                  estrategias={ctx.estrategias}
                   onChange={(next) => handleChange(field.key, next)}
                 />
               ) : field.type === "multicanal" ? (
@@ -564,7 +628,7 @@ function CatalogDetailModal({ category, ctx, item, onClose, onEdit }: DetailProp
   // En un servicio, muestra también qué estrategias de hostigamiento tiene disponibles.
   const estrategiasDelServicio =
     category === "servicios"
-      ? ctx.estrategias.filter((e) => e.tipoCobranza === item.tipoCobranza)
+      ? ctx.estrategias.filter((e) => (item.estrategiaCodigos || []).includes(e.codigo))
       : [];
 
   return (

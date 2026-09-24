@@ -53,10 +53,10 @@ const INDICADORES: Record<
     descripcion: "Cantidad de gestiones ejecutadas por cada tipo de cobranza.",
     unidad: "gestiones",
     etiquetaFiltro: "Tipo de cobranza",
-    opciones: ["Todos", "Cobranza temprana", "Cobranza tardía", "Cobranza prejudicial", "Cobranza judicial"],
+    opciones: ["Todos", "Cobranza temprana", "Cobranza intermedia", "Cobranza prejudicial", "Cobranza judicial"],
     series: [
       { nombre: "Temprana", valores: serie("temprana", 80, 220) },
-      { nombre: "Tardía", valores: serie("tardia", 50, 160) },
+      { nombre: "Intermedia", valores: serie("tardia", 50, 160) },
       { nombre: "Prejudicial", valores: serie("prejudicial", 20, 90) },
       { nombre: "Judicial", valores: serie("judicial", 5, 40) },
     ],

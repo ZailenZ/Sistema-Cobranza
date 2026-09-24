@@ -3,6 +3,8 @@ import { Link, useLocation } from "react-router";
 import {
   BarChart3,
   Bot,
+  Cpu,
+  RefreshCw,
   Building2,
   ChevronDown,
   ChevronRight,
@@ -108,13 +110,24 @@ const menuBlocks: MenuItem[] = [
     ],
   },
   {
+    title: "Aplicativo",
+    icon: <Cpu className="size-4" />,
+    module: "aplicativo",
+    children: [
+      { title: "Monitor Batch", icon: <Database className="size-4" />, path: "/aplicativo/monitor-batch" },
+      { title: "Fabricación de tickets", icon: <Ticket className="size-4" />, path: "/aplicativo/fabricacion-tickets" },
+      { title: "Actualización de protocolos", icon: <RefreshCw className="size-4" />, path: "/aplicativo/actualizacion-protocolos" },
+      { title: "Generación de estadísticas", icon: <BarChart3 className="size-4" />, path: "/aplicativo/generacion-estadisticas" },
+      { title: "Pre-cálculo de KPIs", icon: <Target className="size-4" />, path: "/aplicativo/precalculo-kpis" },
+    ],
+  },
+  {
     title: "Técnico",
     icon: <Wrench className="size-4" />,
     module: "tecnico",
     children: [
-      { title: "Monitor Batch", icon: <Database className="size-4" />, path: "/tecnico/batch-monitor" },
       { title: "Mantenimiento BD", icon: <Wrench className="size-4" />, path: "/tecnico/mantenimiento-bd" },
-      { title: "Backup", icon: <HardDriveDownload className="size-4" />, path: "/tecnico/backup" },
+      { title: "Backup y restauración", icon: <HardDriveDownload className="size-4" />, path: "/tecnico/backup" },
     ],
   },
 ];

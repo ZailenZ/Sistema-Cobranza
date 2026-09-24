@@ -21,7 +21,7 @@ import { useSyncExternalStore } from "react";
 
 export type Role = "Administrador" | "GestorSeguridad" | "Gerente" | "Sponsor" | "Tecnico";
 
-export type ModuleKey = "seguridad" | "gerencial" | "operativo" | "reportes" | "tecnico";
+export type ModuleKey = "seguridad" | "gerencial" | "operativo" | "reportes" | "aplicativo" | "tecnico";
 
 export const ROLES: Role[] = ["Administrador", "GestorSeguridad", "Gerente", "Sponsor", "Tecnico"];
 
@@ -77,11 +77,11 @@ export const MOCK_USERS: Record<Role, MockUser> = {
 
 // Matriz de acceso por rol (arquitectura §1.2). El Administrador ve todo.
 export const ROLE_MODULES: Record<Role, ModuleKey[]> = {
-  Administrador: ["seguridad", "gerencial", "operativo", "reportes", "tecnico"],
+  Administrador: ["seguridad", "gerencial", "operativo", "reportes", "aplicativo", "tecnico"],
   GestorSeguridad: ["seguridad"],
   Gerente: ["gerencial"],
   Sponsor: ["operativo", "reportes"],
-  Tecnico: ["tecnico"],
+  Tecnico: ["aplicativo", "tecnico"],
 };
 
 // Pantalla de inicio por rol (a dónde redirige "/").
@@ -90,7 +90,7 @@ export const ROLE_HOME: Record<Role, string> = {
   GestorSeguridad: "/seguridad/usuarios",
   Gerente: "/gerencial/dashboard",
   Sponsor: "/operativo/dashboard",
-  Tecnico: "/tecnico/mantenimiento-bd",
+  Tecnico: "/aplicativo/monitor-batch",
 };
 
 export const ROLE_LABEL: Record<Role, string> = {

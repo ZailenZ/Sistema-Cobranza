@@ -75,8 +75,8 @@ export function DashboardOperativo() {
   const misSponsor = user.rol === "Sponsor" ? getSponsors().find((s) => s.codigo === user.sponsorCodigo) : undefined;
 
   const [tipoDetalle, setTipoDetalle] = useState<ServicioCobranza | null>(null);
-  const estrategiasDe = (tipoCobranza: string) =>
-    estrategias.filter((e) => e.tipoCobranza === tipoCobranza && e.estado === "Activo");
+  const estrategiasDe = (servicio: ServicioCobranza | null | undefined) =>
+    estrategias.filter((e) => (servicio?.estrategiaCodigos ?? []).includes(e.codigo) && e.estado === "Activo");
 
   // Todo el panel refleja datos reales: arranca en cero hasta que el sponsor suba su cartera.
   const deudas = getDeudas();
@@ -176,7 +176,7 @@ export function DashboardOperativo() {
                     {tipoMorosoDe(s)?.nombre || "Sin tipo de moroso"} · Mora {formatRangoMora(tipoMorosoDe(s))}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
-                    {estrategiasDe(s.tipoCobranza).length} estrategia(s) de hostigamiento
+                    {estrategiasDe(s).length} estrategia(s) de hostigamiento
                   </p>
                   <span className="mt-3 inline-block text-sm font-medium text-primary group-hover:underline">
                     Ver en qué consiste →
@@ -296,11 +296,11 @@ export function DashboardOperativo() {
 
               <div>
                 <p className="mb-2 text-base font-semibold text-foreground">Estrategias de hostigamiento</p>
-                {estrategiasDe(tipoDetalle.tipoCobranza).length === 0 ? (
+                {estrategiasDe(tipoDetalle).length === 0 ? (
                   <p className="text-sm text-muted-foreground">Este tipo aún no tiene estrategias activas.</p>
                 ) : (
                   <ul className="space-y-2">
-                    {estrategiasDe(tipoDetalle.tipoCobranza).map((e) => (
+                    {estrategiasDe(tipoDetalle).map((e) => (
                       <li key={e.codigo} className="rounded-xl border border-border p-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <p className="flex items-center gap-1.5 text-base font-semibold text-foreground">

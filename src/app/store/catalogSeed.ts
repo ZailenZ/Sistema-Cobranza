@@ -52,6 +52,9 @@ export type TipoMoroso = {
   id: number;
   codigo: string;
   nombre: string;
+  /** Cuántas veces ha incurrido en mora: el otro criterio que define el perfil. */
+  incidenciasMin: number;
+  incidenciasMax: number | null; // null = "a más"
   moraMin: number;
   moraMax: number | null; // null = "a más"
   saldoMin: number;
@@ -61,13 +64,21 @@ export type TipoMoroso = {
 };
 
 export const MOROSOS_SEED: TipoMoroso[] = [
-  { id: 1, codigo: "MOR-001", nombre: "Moroso ocasional", moraMin: 1, moraMax: 15, saldoMin: 500, saldoMax: 1000, descripcion: "Se atrasó poco y debe poco; suele pagar apenas se le recuerda.", estado: "Activo" },
-  { id: 2, codigo: "MOR-002", nombre: "Moroso reincidente", moraMin: 16, moraMax: 30, saldoMin: 1001, saldoMax: 3000, descripcion: "Atraso que se repite mes a mes, con saldo que ya empieza a pesar.", estado: "Activo" },
-  { id: 3, codigo: "MOR-003", nombre: "Moroso riesgoso", moraMin: 31, moraMax: 45, saldoMin: 3001, saldoMax: 16000, descripcion: "Mora prolongada y deuda alta; el cobro peligra si no se actúa.", estado: "Activo" },
-  { id: 4, codigo: "MOR-004", nombre: "Moroso crítico", moraMin: 46, moraMax: null, saldoMin: 16001, saldoMax: null, descripcion: "Deuda muy vencida y elevada; candidato a proceso judicial.", estado: "Activo" },
+  { id: 1, codigo: "MOR-001", nombre: "Moroso ocasional", incidenciasMin: 0, incidenciasMax: 1, moraMin: 1, moraMax: 15, saldoMin: 500, saldoMax: 1000, descripcion: "Se atrasó poco y debe poco; suele pagar apenas se le recuerda.", estado: "Activo" },
+  { id: 2, codigo: "MOR-002", nombre: "Moroso reincidente", incidenciasMin: 2, incidenciasMax: 3, moraMin: 16, moraMax: 30, saldoMin: 1001, saldoMax: 3000, descripcion: "Atraso que se repite mes a mes, con saldo que ya empieza a pesar.", estado: "Activo" },
+  { id: 3, codigo: "MOR-003", nombre: "Moroso riesgoso", incidenciasMin: 4, incidenciasMax: 5, moraMin: 31, moraMax: 45, saldoMin: 3001, saldoMax: 16000, descripcion: "Mora prolongada y deuda alta; el cobro peligra si no se actúa.", estado: "Activo" },
+  { id: 4, codigo: "MOR-004", nombre: "Moroso crítico", incidenciasMin: 6, incidenciasMax: null, moraMin: 46, moraMax: null, saldoMin: 16001, saldoMax: null, descripcion: "Deuda muy vencida y elevada; candidato a proceso judicial.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un tipo de moroso puede darse de baja sin eliminarlo.
-  { id: 5, codigo: "MOR-005", nombre: "Moroso de prueba (ejemplo)", moraMin: 200, moraMax: null, saldoMin: 100000, saldoMax: null, descripcion: "Tipo de moroso de ejemplo para probar la desactivación.", estado: "Inactivo" },
+  { id: 5, codigo: "MOR-005", nombre: "Moroso de prueba (ejemplo)", incidenciasMin: 99, incidenciasMax: null, moraMin: 200, moraMax: null, saldoMin: 100000, saldoMax: null, descripcion: "Tipo de moroso de ejemplo para probar la desactivación.", estado: "Inactivo" },
 ];
+
+/** Formatea el rango de incidencias de un tipo de moroso: "0–1" / "6 a más". */
+export function formatRangoIncidencias(tipo: TipoMoroso | undefined) {
+  if (!tipo) return "—";
+  return tipo.incidenciasMax === null
+    ? `${tipo.incidenciasMin} a más`
+    : `${tipo.incidenciasMin}–${tipo.incidenciasMax}`;
+}
 
 /** Formatea el rango de mora de un tipo de moroso: "1–15 días" / "46 días a más". */
 export function formatRangoMora(tipo: TipoMoroso | undefined) {
@@ -103,6 +114,9 @@ export type ServicioCobranza = {
   tipoCobranza: string;
   /** Tipo de moroso al que aplica este servicio; de ahí salen los rangos de mora y saldo. */
   tipoMorosoCodigo: string;
+  /** Estrategias de hostigamiento que este tipo de cobranza puede usar. La relación
+   *  servicio ↔ estrategia se define aquí, no en el catálogo de estrategias. */
+  estrategiaCodigos: string[];
   /** Canales que usa este tipo de cobranza, cada uno con su frecuencia diaria. */
   canales: CanalFrecuencia[];
   descripcion: string;
@@ -115,6 +129,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     codigo: "SRV-001",
     tipoCobranza: "Cobranza temprana",
     tipoMorosoCodigo: "MOR-001",
+    estrategiaCodigos: ["EST-01", "EST-02", "EST-03"],
     canales: [
       { canalCodigo: "CAN-001", vecesPorDia: 3 },
       { canalCodigo: "CAN-002", vecesPorDia: 2 },
@@ -125,8 +140,9 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
   {
     id: 2,
     codigo: "SRV-002",
-    tipoCobranza: "Cobranza tardía",
+    tipoCobranza: "Cobranza intermedia",
     tipoMorosoCodigo: "MOR-002",
+    estrategiaCodigos: ["EST-04", "EST-05", "EST-06", "EST-07"],
     canales: [
       { canalCodigo: "CAN-002", vecesPorDia: 3 },
       { canalCodigo: "CAN-003", vecesPorDia: 2 },
@@ -140,6 +156,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     codigo: "SRV-003",
     tipoCobranza: "Cobranza prejudicial",
     tipoMorosoCodigo: "MOR-003",
+    estrategiaCodigos: ["EST-08", "EST-09", "EST-10"],
     canales: [
       { canalCodigo: "CAN-004", vecesPorDia: 2 },
       { canalCodigo: "CAN-002", vecesPorDia: 3 },
@@ -153,6 +170,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     codigo: "SRV-004",
     tipoCobranza: "Cobranza judicial",
     tipoMorosoCodigo: "MOR-004",
+    estrategiaCodigos: ["EST-11"],
     canales: [{ canalCodigo: "CAN-005", vecesPorDia: 1 }],
     descripcion: "Notificación formal por carta notarial para derivar el caso a proceso judicial.",
     estado: "Activo",
@@ -163,6 +181,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     codigo: "SRV-005",
     tipoCobranza: "Cobranza Extra (ejemplo)",
     tipoMorosoCodigo: "MOR-005",
+    estrategiaCodigos: ["EST-12"],
     canales: [{ canalCodigo: "CAN-006", vecesPorDia: 1 }],
     descripcion: "Servicio de ejemplo para probar la desactivación de un tipo de cobranza.",
     estado: "Inactivo",
@@ -252,7 +271,6 @@ export type EstrategiaCobranza = {
   id: number;
   codigo: string;
   nombre: string;
-  tipoCobranza: string; // referencia a ServicioCobranza.tipoCobranza
   canalCodigos: string[]; // uno o varios canales del catálogo de canales
   plantillaCodigo: string; // tipo de mensaje del catálogo de plantillas
   duracionDias: number; // cuánto dura la estrategia (admite medios días: 0.5, 1.5…)
@@ -263,22 +281,22 @@ export type EstrategiaCobranza = {
 
 export const ESTRATEGIAS_SEED: EstrategiaCobranza[] = [
   // Cobranza temprana (leve)
-  { id: 1, codigo: "EST-01", nombre: "Estrategia 01", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-001"], plantillaCodigo: "PLT-001", duracionDias: 1, tarifa: 3, descripcion: "Un SMS amistoso durante un día: el primer toque y el más económico.", estado: "Activo" },
-  { id: 2, codigo: "EST-02", nombre: "Estrategia 02", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-001", duracionDias: 0.5, tarifa: 4, descripcion: "Mensaje amistoso por WhatsApp: llega más rápido y se lee más.", estado: "Activo" },
-  { id: 3, codigo: "EST-03", nombre: "Estrategia 03", tipoCobranza: "Cobranza temprana", canalCodigos: ["CAN-002", "CAN-001"], plantillaCodigo: "PLT-002", duracionDias: 1.5, tarifa: 5, descripcion: "Recordatorio combinado por WhatsApp y SMS para reforzar el aviso.", estado: "Activo" },
-  // Cobranza tardía (intermedia)
-  { id: 4, codigo: "EST-04", nombre: "Estrategia 04", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-002", duracionDias: 0.5, tarifa: 6, descripcion: "Recordatorio breve por WhatsApp para morosos que recién se atrasan.", estado: "Activo" },
-  { id: 5, codigo: "EST-05", nombre: "Estrategia 05", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2, tarifa: 7, descripcion: "Aviso formal por correo, con constancia escrita del atraso.", estado: "Activo" },
-  { id: 6, codigo: "EST-06", nombre: "Estrategia 06", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002", "CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2.5, tarifa: 8, descripcion: "Aviso formal por WhatsApp y correo a la vez, para más presión.", estado: "Activo" },
-  { id: 7, codigo: "EST-07", nombre: "Estrategia 07", tipoCobranza: "Cobranza tardía", canalCodigos: ["CAN-002", "CAN-003", "CAN-001"], plantillaCodigo: "PLT-004", duracionDias: 3.5, tarifa: 9, descripcion: "Advertencia por tres canales durante varios días: la más intensa del tramo.", estado: "Activo" },
+  { id: 1, codigo: "EST-01", nombre: "Estrategia 01", canalCodigos: ["CAN-001"], plantillaCodigo: "PLT-001", duracionDias: 1, tarifa: 3, descripcion: "Un SMS amistoso durante un día: el primer toque y el más económico.", estado: "Activo" },
+  { id: 2, codigo: "EST-02", nombre: "Estrategia 02", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-001", duracionDias: 0.5, tarifa: 4, descripcion: "Mensaje amistoso por WhatsApp: llega más rápido y se lee más.", estado: "Activo" },
+  { id: 3, codigo: "EST-03", nombre: "Estrategia 03", canalCodigos: ["CAN-002", "CAN-001"], plantillaCodigo: "PLT-002", duracionDias: 1.5, tarifa: 5, descripcion: "Recordatorio combinado por WhatsApp y SMS para reforzar el aviso.", estado: "Activo" },
+  // Cobranza intermedia (intermedia)
+  { id: 4, codigo: "EST-04", nombre: "Estrategia 04", canalCodigos: ["CAN-002"], plantillaCodigo: "PLT-002", duracionDias: 0.5, tarifa: 6, descripcion: "Recordatorio breve por WhatsApp para morosos que recién se atrasan.", estado: "Activo" },
+  { id: 5, codigo: "EST-05", nombre: "Estrategia 05", canalCodigos: ["CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2, tarifa: 7, descripcion: "Aviso formal por correo, con constancia escrita del atraso.", estado: "Activo" },
+  { id: 6, codigo: "EST-06", nombre: "Estrategia 06", canalCodigos: ["CAN-002", "CAN-003"], plantillaCodigo: "PLT-003", duracionDias: 2.5, tarifa: 8, descripcion: "Aviso formal por WhatsApp y correo a la vez, para más presión.", estado: "Activo" },
+  { id: 7, codigo: "EST-07", nombre: "Estrategia 07", canalCodigos: ["CAN-002", "CAN-003", "CAN-001"], plantillaCodigo: "PLT-004", duracionDias: 3.5, tarifa: 9, descripcion: "Advertencia por tres canales durante varios días: la más intensa del tramo.", estado: "Activo" },
   // Cobranza prejudicial
-  { id: 8, codigo: "EST-08", nombre: "Estrategia 08", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004"], plantillaCodigo: "PLT-004", duracionDias: 1, tarifa: 10, descripcion: "Llamada automatizada de advertencia, con respuesta del moroso.", estado: "Activo" },
-  { id: 9, codigo: "EST-09", nombre: "Estrategia 09", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002"], plantillaCodigo: "PLT-005", duracionDias: 0.5, tarifa: 11, descripcion: "Ultimátum por llamada y WhatsApp: aviso final antes de lo legal.", estado: "Activo" },
-  { id: 10, codigo: "EST-10", nombre: "Estrategia 10", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002", "CAN-003"], plantillaCodigo: "PLT-005", duracionDias: 2.5, tarifa: 12, descripcion: "Ultimátum sostenido por llamada, WhatsApp y correo.", estado: "Activo" },
+  { id: 8, codigo: "EST-08", nombre: "Estrategia 08", canalCodigos: ["CAN-004"], plantillaCodigo: "PLT-004", duracionDias: 1, tarifa: 10, descripcion: "Llamada automatizada de advertencia, con respuesta del moroso.", estado: "Activo" },
+  { id: 9, codigo: "EST-09", nombre: "Estrategia 09", canalCodigos: ["CAN-004", "CAN-002"], plantillaCodigo: "PLT-005", duracionDias: 0.5, tarifa: 11, descripcion: "Ultimátum por llamada y WhatsApp: aviso final antes de lo legal.", estado: "Activo" },
+  { id: 10, codigo: "EST-10", nombre: "Estrategia 10", canalCodigos: ["CAN-004", "CAN-002", "CAN-003"], plantillaCodigo: "PLT-005", duracionDias: 2.5, tarifa: 12, descripcion: "Ultimátum sostenido por llamada, WhatsApp y correo.", estado: "Activo" },
   // Cobranza judicial
-  { id: 11, codigo: "EST-11", nombre: "Estrategia 11", tipoCobranza: "Cobranza judicial", canalCodigos: ["CAN-005"], plantillaCodigo: "PLT-006", duracionDias: 1, tarifa: 60, descripcion: "Carta notarial entregada por el notario en el domicilio; inicia el proceso judicial.", estado: "Activo" },
+  { id: 11, codigo: "EST-11", nombre: "Estrategia 11", canalCodigos: ["CAN-005"], plantillaCodigo: "PLT-006", duracionDias: 1, tarifa: 60, descripcion: "Carta notarial entregada por el notario en el domicilio; inicia el proceso judicial.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que una estrategia puede darse de baja sin eliminarla.
-  { id: 12, codigo: "EST-12", nombre: "Estrategia de prueba (ejemplo)", tipoCobranza: "Cobranza Extra (ejemplo)", canalCodigos: ["CAN-006"], plantillaCodigo: "PLT-007", duracionDias: 1, tarifa: 0, descripcion: "Estrategia de ejemplo para probar la desactivación.", estado: "Inactivo" },
+  { id: 12, codigo: "EST-12", nombre: "Estrategia de prueba (ejemplo)", canalCodigos: ["CAN-006"], plantillaCodigo: "PLT-007", duracionDias: 1, tarifa: 0, descripcion: "Estrategia de ejemplo para probar la desactivación.", estado: "Inactivo" },
 ];
 
 // --- Catálogo de autómata: el robot de envío masivo por canal y su capacidad ---

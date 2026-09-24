@@ -9,7 +9,7 @@ const STORAGE_PREFIX = "swcobranza:";
 // navegador de un usuario que abrió una versión anterior del prototipo nunca
 // se migran solos; sin este chequeo, una pantalla nueva que espere un campo
 // que no existía (p. ej. Servicio.saldoMin) rompe al leer datos con la forma vieja.
-const SCHEMA_VERSION = 10;
+const SCHEMA_VERSION = 11;
 const SCHEMA_VERSION_KEY = `${STORAGE_PREFIX}schemaVersion`;
 
 /** Si el esquema de catálogos/entidades cambió, limpia los datos simulados persistidos

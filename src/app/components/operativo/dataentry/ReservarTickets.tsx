@@ -376,7 +376,7 @@ export function ReservarTickets() {
               {servicios
                 .filter((s) => s.estado === "Activo")
                 .map((s) => {
-                  const suyas = estrategiasDeServicio(s.tipoCobranza, estrategias);
+                  const suyas = estrategiasDeServicio(s, estrategias);
                   return (
                     <div key={s.codigo} className="rounded-xl border border-border p-5">
                       <p className="text-base font-semibold text-foreground">{s.tipoCobranza}</p>
@@ -689,7 +689,7 @@ export function ReservarTickets() {
         <ElegirEstrategiaModal
           deudorNombre={deudorOf(ticketEnEdicion.deudorId)?.nombre || "—"}
           tipoCobranza={ticketEnEdicionServicio?.tipoCobranza || "—"}
-          estrategias={estrategiasDeServicio(ticketEnEdicionServicio?.tipoCobranza, estrategias)}
+          estrategias={estrategiasDeServicio(ticketEnEdicionServicio, estrategias)}
           recomendada={recomendacionDe(ticketEnEdicion)}
           canales={canales}
           plantillas={plantillas}

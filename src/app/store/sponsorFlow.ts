@@ -87,12 +87,17 @@ export function clasificarServicio(
   });
 }
 
-/** Estrategias de hostigamiento activas disponibles para un tipo de cobranza,
- *  ordenadas de menos a más intensa (la tarifa crece con la intensidad). */
-export function estrategiasDeServicio(tipoCobranza: string | undefined, estrategias: EstrategiaCobranza[]) {
-  if (!tipoCobranza) return [];
+/** Estrategias de hostigamiento activas que un servicio (tipo de cobranza) puede usar,
+ *  ordenadas de menos a más intensa (la tarifa crece con la intensidad). La relación
+ *  servicio ↔ estrategia se define en el catálogo de servicios. */
+export function estrategiasDeServicio(
+  servicio: { estrategiaCodigos?: string[] } | undefined,
+  estrategias: EstrategiaCobranza[],
+) {
+  const codigos = servicio?.estrategiaCodigos ?? [];
+  if (codigos.length === 0) return [];
   return estrategias
-    .filter((e) => e.tipoCobranza === tipoCobranza && e.estado === "Activo")
+    .filter((e) => codigos.includes(e.codigo) && e.estado === "Activo")
     .sort((a, b) => a.tarifa - b.tarifa);
 }
 
@@ -112,7 +117,7 @@ export function recomendarEstrategia(
   estrategias: EstrategiaCobranza[],
   tiposMoroso: TipoMoroso[] = [],
 ): EstrategiaCobranza | undefined {
-  const disponibles = estrategiasDeServicio(servicio?.tipoCobranza, estrategias);
+  const disponibles = estrategiasDeServicio(servicio, estrategias);
   if (disponibles.length === 0) return undefined;
   const tipo = tipoMorosoDeServicio(servicio, tiposMoroso);
   if (!deuda || !tipo) return disponibles[0];

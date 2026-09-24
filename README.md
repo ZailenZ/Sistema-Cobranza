@@ -45,18 +45,19 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
   - Dashboard con indicadores generales de cartera y recuperación.
   - Mantenimiento de parámetros:
     - **Catálogo de morosos**: los perfiles de moroso (ocasional, reincidente,
-      riesgoso, crítico) y los rangos de **mora y saldo** que definen a cada uno.
-      Es el catálogo que manda sobre la clasificación.
-    - **Catálogo de servicio** (tipos de cobranza): a qué **tipo de moroso** aplica
-      cada tipo de cobranza — de ahí hereda sus rangos de mora y saldo — y los
-      canales que usa con su frecuencia (cuántos mensajes al día por cada canal).
+      riesgoso, crítico) con su **número de incidencias** y sus rangos de **mora y
+      saldo**. Aquí solo se definen: no se dice a qué servicio van.
+    - **Catálogo de servicio** (tipos de cobranza): el centro de las relaciones —
+      elige a qué **tipo de moroso** aplica (de ahí hereda mora y saldo), qué
+      **estrategias** puede usar, y los canales con su frecuencia diaria.
     - **Catálogo de canales**: medio de contacto, su naturaleza (digital/físico) y el
       horario diario en que se permite contactar por ahí. El canal físico es la
       **carta notarial**, reservada para la cobranza judicial.
     - **Catálogo de plantillas**: el tipo de mensaje (Amistoso, Recordatorio,
       Aviso formal, Advertencia, Ultimátum, Carta notarial) y su texto real.
     - **Catálogo de estrategias**: cómo se hostiga a un moroso — canal(es) + tipo
-      de mensaje + duración + tarifa, asociado a un tipo de cobranza.
+      de mensaje + duración + tarifa. La estrategia no declara a qué tipo de
+      cobranza pertenece: esa relación la define el catálogo de servicio.
     - **Catálogo de autómata**: el robot que envía por cada canal y su capacidad
       máxima por día (el mínimo siempre es 0). La carta notarial la entrega un
       **notario**, no un robot.
@@ -105,8 +106,13 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
   detalle por moroso. Se puede ver como **tabla, histograma o diagrama de pastel**
   (los gráficos usan datos de muestra fijos). No muestra con qué estrategia se
   trabajó a cada moroso. Al cierre, el sponsor puede **calificar la cobranza**.
-- **Técnico (restringido, fuera del flujo operativo):** Monitor Batch Aplicativo
-  (solo lectura), Mantenimiento de BD, Backup.
+- **Aplicativo (procesos batch, solo consulta — accede el Técnico):** Monitor
+  Batch, Fabricación de tickets de gestión, Actualización de protocolos,
+  Generación de estadísticas y Pre-cálculo y generación de KPIs. Son paneles de
+  consulta con datos de muestra: no ejecutan procesos reales.
+- **Técnico (restringido, fuera del flujo operativo):** Mantenimiento de BD y
+  Backup y restauración (copia, restaurar a un punto guardado y verificación de
+  integridad; estas dos últimas solo confirman "Completado").
 
 ## Decisiones de diseño relevantes
 
