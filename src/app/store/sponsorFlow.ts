@@ -141,6 +141,21 @@ export function automataParaCanal(canalNombre: string, automatas: AutomataCatalo
   return undefined;
 }
 
+/** Autómatas que ejecutan una estrategia: uno por cada canal que la estrategia usa.
+ *  No se declaran a mano — salen de la relación canal ↔ autómata. */
+export function automatasDeEstrategia(
+  canalCodigos: string[] | undefined,
+  canales: CanalContacto[],
+  automatas: AutomataCatalogo[],
+): AutomataCatalogo[] {
+  const encontrados = (canalCodigos ?? [])
+    .map((codigo) => canales.find((c) => c.codigo === codigo))
+    .map((canal) => (canal ? automataParaCanal(canal.nombre, automatas) : undefined))
+    .filter((a): a is AutomataCatalogo => Boolean(a));
+  // Un mismo autómata podría cubrir dos canales: no se repite.
+  return encontrados.filter((a, i) => encontrados.findIndex((x) => x.codigo === a.codigo) === i);
+}
+
 /** Reemplaza los marcadores {nombre}, {saldo}, {mora} y {sponsor} del mensaje de una plantilla
  *  por los datos reales del envío. Es lo que se muestra en "Ver Mensaje". */
 export function renderMensajePlantilla(

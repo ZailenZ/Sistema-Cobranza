@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import { PageHeader } from "../shared/PageHeader";
 import { DataTable } from "../shared/DataTable";
 import { getCatalog, setCatalog } from "../../store/localDb";
+import { automatasDeEstrategia } from "../../store/sponsorFlow";
 import {
   AUTOMATA_SEED,
   CANALES_SEED,
@@ -18,6 +19,7 @@ import {
   tipoMorosoDeServicio,
   formatDuracion,
   formatListaCanales,
+  type AutomataCatalogo,
   type CanalContacto,
   type CanalFrecuencia,
   type EstrategiaCobranza,
@@ -62,6 +64,7 @@ const automataData = AUTOMATA_SEED;
 /** Catálogos vivos que necesitan las columnas/formularios para resolver referencias entre sí. */
 type CatalogCtx = {
   canales: CanalContacto[];
+  automata: AutomataCatalogo[];
   morosos: TipoMoroso[];
   plantillas: PlantillaMensaje[];
   servicios: ServicioCobranza[];
@@ -187,6 +190,13 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
               .join(", ") || "—",
         },
         { key: "canalCodigos", label: "Canal(es) utilizado(s)", render: (i: any) => formatListaCanales(i.canalCodigos, ctx.canales) },
+        {
+          key: "__automatas", label: "Autómata(s)",
+          render: (i: any) => {
+            const suyos = automatasDeEstrategia(i.canalCodigos, ctx.canales, ctx.automata);
+            return suyos.length === 0 ? "—" : suyos.map((a) => a.codigo).join(", ");
+          },
+        },
         {
           key: "plantillaCodigo", label: "Tipo de mensaje",
           render: (i: any) => ctx.plantillas.find((p) => p.codigo === i.plantillaCodigo)?.nombre || "—",
@@ -654,6 +664,33 @@ function CatalogDetailModal({ category, ctx, item, onClose, onEdit }: DetailProp
             ))}
           </dl>
 
+          {category === "estrategias" && (
+            <div className="mt-5">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Autómatas que la ejecutan
+              </p>
+              {automatasDeEstrategia(item.canalCodigos, ctx.canales, ctx.automata).length === 0 ? (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Ninguno: los canales de esta estrategia no tienen autómata asignado.
+                </p>
+              ) : (
+                <ul className="mt-2 space-y-1.5">
+                  {automatasDeEstrategia(item.canalCodigos, ctx.canales, ctx.automata).map((a) => (
+                    <li key={a.codigo} className="rounded-lg border border-border/60 px-3 py-2 text-sm">
+                      <span className="font-medium text-foreground">{a.codigo} · {a.nombre}</span>{" "}
+                      <span className="text-muted-foreground">
+                        — hasta {Number(a.capacidadMaxPorDia).toLocaleString()} envíos al día
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-2 text-xs text-muted-foreground">
+                Salen de los canales de la estrategia: cada canal tiene su autómata.
+              </p>
+            </div>
+          )}
+
           {category === "servicios" && (
             <div className="mt-5">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -785,6 +822,7 @@ export function ParamsMaintenance() {
   const ctx: CatalogCtx = useMemo(
     () => ({
       canales: (localData["canales"] || canalesData) as CanalContacto[],
+      automata: (localData["automata"] || automataData) as AutomataCatalogo[],
       morosos: (localData["morosos"] || morososData) as TipoMoroso[],
       plantillas: (localData["plantillas"] || plantillasData) as PlantillaMensaje[],
       servicios: (localData["servicios"] || serviciosData) as ServicioCobranza[],
