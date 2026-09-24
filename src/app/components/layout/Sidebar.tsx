@@ -63,6 +63,7 @@ const menuBlocks: MenuItem[] = [
         icon: <Settings className="size-4" />,
         children: [
           { title: "Catálogo de servicio", icon: <FileText className="size-4" />, path: "/gerencial/parametros/servicios" },
+          { title: "Catálogo de morosos", icon: <UserX className="size-4" />, path: "/gerencial/parametros/morosos" },
           { title: "Catálogo de canales", icon: <MessageSquareText className="size-4" />, path: "/gerencial/parametros/canales" },
           { title: "Catálogo de plantillas", icon: <FileText className="size-4" />, path: "/gerencial/parametros/plantillas" },
           { title: "Catálogo de estrategias", icon: <Zap className="size-4" />, path: "/gerencial/parametros/estrategias" },

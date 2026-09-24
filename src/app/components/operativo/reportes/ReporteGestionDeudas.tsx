@@ -87,10 +87,13 @@ const respuestaBadge = (r: EnvioCobranza["respuesta"]) => {
   return <span className={`px-2 py-1 text-xs font-semibold rounded-full ${map[r]}`}>{r}</span>;
 };
 
-const estadoCobranzaDe = (ticket: TicketGestion | undefined) => {
+// En este reporte "finalizado" significa que la gestión ya salió y el moroso ya dio (o no)
+// su respuesta: no queda nada por hacer con ese envío. Solo sigue "en gestión" un ticket
+// cuya gestión aún no tiene envío registrado.
+const estadoCobranzaDe = (ticket: TicketGestion | undefined, tieneEnvio: boolean) => {
   if (!ticket) return "Sin estrategia";
   if (ticket.estado === "CE") return "Finalizado";
-  if (ticket.estado === "RE") return "En gestión";
+  if (ticket.estado === "RE") return tieneEnvio ? "Finalizado" : "En gestión";
   return "Sin estrategia";
 };
 
@@ -308,7 +311,8 @@ export function ReporteGestionDeudas() {
               },
               {
                 key: "estadoCobranza", label: "Estado Cobranza",
-                render: (d: (typeof misDeudas)[number]) => estadoCobranzaBadge(estadoCobranzaDe(ticketOf(d.id))),
+                render: (d: (typeof misDeudas)[number]) =>
+                  estadoCobranzaBadge(estadoCobranzaDe(ticketOf(d.id), Boolean(envioOf(d.id)))),
               },
               {
                 key: "fecha", label: "Fecha", sortable: true,

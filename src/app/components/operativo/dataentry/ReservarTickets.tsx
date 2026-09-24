@@ -31,10 +31,14 @@ import {
   formatCanalesFrecuencia,
   formatDuracion,
   formatListaCanales,
+  formatRangoMora,
+  formatRangoSaldo,
+  tipoMorosoDeServicio,
   type CanalContacto,
   type EstrategiaCobranza,
   type PlantillaMensaje,
   type ServicioCobranza,
+  type TipoMoroso,
 } from "../../../store/catalogSeed";
 import { getCurrentUser } from "../../../store/session";
 
@@ -236,6 +240,7 @@ export function ReservarTickets() {
   const servicios = useMemo(() => getCatalog<ServicioCobranza>("servicios", []), []);
   const plantillas = useMemo(() => getCatalog<PlantillaMensaje>("plantillas", []), []);
   const estrategias = useMemo(() => getCatalog<EstrategiaCobranza>("estrategias", []), []);
+  const tiposMoroso = useMemo(() => getCatalog<TipoMoroso>("morosos", []), []);
   const sponsors = useMemo(() => getSponsors(), []);
 
   const deudaOf = (id: string) => deudas.find((d) => d.id === id);
@@ -243,7 +248,8 @@ export function ReservarTickets() {
   const servicioDe = (t: TicketGestion) => servicios.find((s) => s.codigo === deudaOf(t.deudaId)?.servicioCodigo);
   const estrategiaDe = (t: TicketGestion) => estrategias.find((e) => e.codigo === t.estrategiaCodigo);
   const envioDe = (t: TicketGestion) => envios.find((e) => e.ticketId === t.id);
-  const recomendacionDe = (t: TicketGestion) => recomendarEstrategia(deudaOf(t.deudaId), servicioDe(t), estrategias);
+  const recomendacionDe = (t: TicketGestion) =>
+    recomendarEstrategia(deudaOf(t.deudaId), servicioDe(t), estrategias, tiposMoroso);
 
   // Sponsor en modo autoservicio: solo ve su propia cartera de morosos.
   const misSponsor = user.rol === "Sponsor" ? sponsors.find((s) => s.codigo === user.sponsorCodigo) : undefined;
@@ -376,8 +382,9 @@ export function ReservarTickets() {
                       <p className="text-base font-semibold text-foreground">{s.tipoCobranza}</p>
                       <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{s.descripcion}</p>
                       <p className="mt-1.5 text-sm text-muted-foreground">
-                        Mora {s.moraMin}–{s.moraMax ?? "a más"} días · Saldo S/ {s.saldoMin.toLocaleString()}–
-                        {s.saldoMax ? s.saldoMax.toLocaleString() : "a más"}
+                        {tipoMorosoDeServicio(s, tiposMoroso)?.nombre || "Sin tipo de moroso"} · Mora{" "}
+                        {formatRangoMora(tipoMorosoDeServicio(s, tiposMoroso))} · Saldo{" "}
+                        {formatRangoSaldo(tipoMorosoDeServicio(s, tiposMoroso))}
                       </p>
                       <p className="mt-1.5 text-sm text-muted-foreground">
                         Canales: {formatCanalesFrecuencia(s.canales, canales)}

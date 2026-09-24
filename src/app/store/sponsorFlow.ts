@@ -20,7 +20,9 @@ import type {
   EstrategiaCobranza,
   PlantillaMensaje,
   ServicioCobranza,
+  TipoMoroso,
 } from "./catalogSeed";
+import { tipoMorosoDeServicio } from "./catalogSeed";
 import {
   addEnviosCobranza,
   addMovimientoTicket,
@@ -73,10 +75,16 @@ function randomRespuesta(): RespuestaEnvio {
 /** Clasifica una deuda en el tipo de cobranza (servicio) activo cuya regla de mora la cubre —
  *  esta es la clasificación automática que hace el sistema a partir de la información del moroso,
  *  el sponsor no elige el tipo de cobranza. */
-export function clasificarServicio(diasMora: number, servicios: ServicioCobranza[]): ServicioCobranza | undefined {
-  return servicios
-    .filter((s) => s.estado === "Activo")
-    .find((s) => diasMora >= s.moraMin && (s.moraMax === null || diasMora <= s.moraMax));
+export function clasificarServicio(
+  diasMora: number,
+  servicios: ServicioCobranza[],
+  tiposMoroso: TipoMoroso[],
+): ServicioCobranza | undefined {
+  return servicios.filter((s) => s.estado === "Activo").find((s) => {
+    const tipo = tipoMorosoDeServicio(s, tiposMoroso);
+    if (!tipo) return false;
+    return diasMora >= tipo.moraMin && (tipo.moraMax === null || diasMora <= tipo.moraMax);
+  });
 }
 
 /** Estrategias de hostigamiento activas disponibles para un tipo de cobranza,
@@ -102,14 +110,16 @@ export function recomendarEstrategia(
   deuda: { diasMora: number; saldo: number } | undefined,
   servicio: ServicioCobranza | undefined,
   estrategias: EstrategiaCobranza[],
+  tiposMoroso: TipoMoroso[] = [],
 ): EstrategiaCobranza | undefined {
   const disponibles = estrategiasDeServicio(servicio?.tipoCobranza, estrategias);
   if (disponibles.length === 0) return undefined;
-  if (!deuda || !servicio) return disponibles[0];
+  const tipo = tipoMorosoDeServicio(servicio, tiposMoroso);
+  if (!deuda || !tipo) return disponibles[0];
 
   const intensidad =
-    (posicionEnRango(deuda.diasMora, servicio.moraMin, servicio.moraMax) +
-      posicionEnRango(deuda.saldo, servicio.saldoMin, servicio.saldoMax)) /
+    (posicionEnRango(deuda.diasMora, tipo.moraMin, tipo.moraMax) +
+      posicionEnRango(deuda.saldo, tipo.saldoMin, tipo.saldoMax)) /
     2;
 
   return disponibles[Math.round(intensidad * (disponibles.length - 1))];
@@ -172,6 +182,7 @@ export type ResultadoCargaMorosos = {
 export function simularCargaMorosos(sponsorCodigo: string): ResultadoCargaMorosos | null {
   const sponsor = getSponsors().find((s) => s.codigo === sponsorCodigo);
   const serviciosActivos = getCatalog<ServicioCobranza>("servicios", []).filter((s) => s.estado === "Activo");
+  const tiposMoroso = getCatalog<TipoMoroso>("morosos", []);
   if (!sponsor || serviciosActivos.length === 0) return null;
 
   const cantidad = randomInt(5, 7);
@@ -186,9 +197,14 @@ export function simularCargaMorosos(sponsorCodigo: string): ResultadoCargaMoroso
     // Cada moroso "trae" su propia mora/saldo (como si vinieran del archivo subido); el sistema
     // los clasifica después, a partir de esos días de mora, en su tipo de cobranza correspondiente.
     const perfil = randomPick(serviciosActivos)!;
-    const diasMora = randomInt(perfil.moraMin, perfil.moraMax ?? perfil.moraMin + 20);
-    const saldo = randomInt(perfil.saldoMin, perfil.saldoMax ?? perfil.saldoMin + 1000);
-    const servicio = clasificarServicio(diasMora, serviciosActivos) || perfil;
+    const tipoPerfil = tipoMorosoDeServicio(perfil, tiposMoroso);
+    const diasMora = tipoPerfil
+      ? randomInt(tipoPerfil.moraMin, tipoPerfil.moraMax ?? tipoPerfil.moraMin + 20)
+      : randomInt(1, 60);
+    const saldo = tipoPerfil
+      ? randomInt(tipoPerfil.saldoMin, tipoPerfil.saldoMax ?? tipoPerfil.saldoMin + 1000)
+      : randomInt(500, 20000);
+    const servicio = clasificarServicio(diasMora, serviciosActivos, tiposMoroso) || perfil;
 
     const deudor: Deudor = {
       id: newId("deu"),

@@ -47,7 +47,50 @@ export const CANALES_SEED: CanalContacto[] = [
   { id: 6, codigo: "CAN-006", nombre: "Telegram (ejemplo)", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "20:00", descripcion: "Canal de ejemplo para probar la desactivación de un canal.", estado: "Inactivo" },
 ];
 
-// --- Catálogo de servicio: reglas de tipo de cobranza por mora/saldo ---
+// --- Catálogo de morosos: qué perfil de moroso define cada rango de mora y saldo ---
+export type TipoMoroso = {
+  id: number;
+  codigo: string;
+  nombre: string;
+  moraMin: number;
+  moraMax: number | null; // null = "a más"
+  saldoMin: number;
+  saldoMax: number | null; // null = "a más"
+  descripcion: string;
+  estado: "Activo" | "Inactivo";
+};
+
+export const MOROSOS_SEED: TipoMoroso[] = [
+  { id: 1, codigo: "MOR-001", nombre: "Moroso ocasional", moraMin: 1, moraMax: 15, saldoMin: 500, saldoMax: 1000, descripcion: "Se atrasó poco y debe poco; suele pagar apenas se le recuerda.", estado: "Activo" },
+  { id: 2, codigo: "MOR-002", nombre: "Moroso reincidente", moraMin: 16, moraMax: 30, saldoMin: 1001, saldoMax: 3000, descripcion: "Atraso que se repite mes a mes, con saldo que ya empieza a pesar.", estado: "Activo" },
+  { id: 3, codigo: "MOR-003", nombre: "Moroso riesgoso", moraMin: 31, moraMax: 45, saldoMin: 3001, saldoMax: 16000, descripcion: "Mora prolongada y deuda alta; el cobro peligra si no se actúa.", estado: "Activo" },
+  { id: 4, codigo: "MOR-004", nombre: "Moroso crítico", moraMin: 46, moraMax: null, saldoMin: 16001, saldoMax: null, descripcion: "Deuda muy vencida y elevada; candidato a proceso judicial.", estado: "Activo" },
+  // Ejemplo desactivado: demuestra que un tipo de moroso puede darse de baja sin eliminarlo.
+  { id: 5, codigo: "MOR-005", nombre: "Moroso de prueba (ejemplo)", moraMin: 200, moraMax: null, saldoMin: 100000, saldoMax: null, descripcion: "Tipo de moroso de ejemplo para probar la desactivación.", estado: "Inactivo" },
+];
+
+/** Formatea el rango de mora de un tipo de moroso: "1–15 días" / "46 días a más". */
+export function formatRangoMora(tipo: TipoMoroso | undefined) {
+  if (!tipo) return "—";
+  return tipo.moraMax === null ? `${tipo.moraMin} días a más` : `${tipo.moraMin}–${tipo.moraMax} días`;
+}
+
+/** Formatea el rango de saldo de un tipo de moroso: "S/ 500–1,000" / "S/ 16,001 a más". */
+export function formatRangoSaldo(tipo: TipoMoroso | undefined) {
+  if (!tipo) return "—";
+  const min = `S/ ${tipo.saldoMin.toLocaleString("es-PE")}`;
+  return tipo.saldoMax === null ? `${min} a más` : `${min}–S/ ${tipo.saldoMax.toLocaleString("es-PE")}`;
+}
+
+/** Tipo de moroso al que apunta un servicio (el que le presta sus rangos de mora y saldo). */
+export function tipoMorosoDeServicio(
+  servicio: { tipoMorosoCodigo?: string } | undefined,
+  tipos: TipoMoroso[],
+) {
+  return tipos.find((m) => m.codigo === servicio?.tipoMorosoCodigo);
+}
+
+// --- Catálogo de servicio: qué tipo de cobranza le toca a cada tipo de moroso ---
 /** Un canal usado por un servicio, con su frecuencia = cuántos mensajes al día se envían por ahí. */
 export type CanalFrecuencia = {
   canalCodigo: string;
@@ -58,10 +101,8 @@ export type ServicioCobranza = {
   id: number;
   codigo: string;
   tipoCobranza: string;
-  moraMin: number;
-  moraMax: number | null; // null = "a más"
-  saldoMin: number;
-  saldoMax: number | null; // null = "a más"
+  /** Tipo de moroso al que aplica este servicio; de ahí salen los rangos de mora y saldo. */
+  tipoMorosoCodigo: string;
   /** Canales que usa este tipo de cobranza, cada uno con su frecuencia diaria. */
   canales: CanalFrecuencia[];
   descripcion: string;
@@ -73,10 +114,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     id: 1,
     codigo: "SRV-001",
     tipoCobranza: "Cobranza temprana",
-    moraMin: 1,
-    moraMax: 15,
-    saldoMin: 500,
-    saldoMax: 1000,
+    tipoMorosoCodigo: "MOR-001",
     canales: [
       { canalCodigo: "CAN-001", vecesPorDia: 3 },
       { canalCodigo: "CAN-002", vecesPorDia: 2 },
@@ -88,10 +126,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     id: 2,
     codigo: "SRV-002",
     tipoCobranza: "Cobranza tardía",
-    moraMin: 16,
-    moraMax: 30,
-    saldoMin: 1001,
-    saldoMax: 3000,
+    tipoMorosoCodigo: "MOR-002",
     canales: [
       { canalCodigo: "CAN-002", vecesPorDia: 3 },
       { canalCodigo: "CAN-003", vecesPorDia: 2 },
@@ -104,10 +139,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     id: 3,
     codigo: "SRV-003",
     tipoCobranza: "Cobranza prejudicial",
-    moraMin: 31,
-    moraMax: 45,
-    saldoMin: 3001,
-    saldoMax: 16000,
+    tipoMorosoCodigo: "MOR-003",
     canales: [
       { canalCodigo: "CAN-004", vecesPorDia: 2 },
       { canalCodigo: "CAN-002", vecesPorDia: 3 },
@@ -120,10 +152,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     id: 4,
     codigo: "SRV-004",
     tipoCobranza: "Cobranza judicial",
-    moraMin: 46,
-    moraMax: null,
-    saldoMin: 16001,
-    saldoMax: null,
+    tipoMorosoCodigo: "MOR-004",
     canales: [{ canalCodigo: "CAN-005", vecesPorDia: 1 }],
     descripcion: "Notificación formal por carta notarial para derivar el caso a proceso judicial.",
     estado: "Activo",
@@ -133,10 +162,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     id: 5,
     codigo: "SRV-005",
     tipoCobranza: "Cobranza Extra (ejemplo)",
-    moraMin: 200,
-    moraMax: null,
-    saldoMin: 100000,
-    saldoMax: null,
+    tipoMorosoCodigo: "MOR-005",
     canales: [{ canalCodigo: "CAN-006", vecesPorDia: 1 }],
     descripcion: "Servicio de ejemplo para probar la desactivación de un tipo de cobranza.",
     estado: "Inactivo",

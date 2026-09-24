@@ -44,9 +44,12 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
 - **Gerencial:**
   - Dashboard con indicadores generales de cartera y recuperación.
   - Mantenimiento de parámetros:
-    - **Catálogo de servicio** (tipos de cobranza): rango de mora/saldo que define
-      la clasificación, y los canales que usa con su frecuencia (cuántos mensajes
-      al día por cada canal).
+    - **Catálogo de morosos**: los perfiles de moroso (ocasional, reincidente,
+      riesgoso, crítico) y los rangos de **mora y saldo** que definen a cada uno.
+      Es el catálogo que manda sobre la clasificación.
+    - **Catálogo de servicio** (tipos de cobranza): a qué **tipo de moroso** aplica
+      cada tipo de cobranza — de ahí hereda sus rangos de mora y saldo — y los
+      canales que usa con su frecuencia (cuántos mensajes al día por cada canal).
     - **Catálogo de canales**: medio de contacto, su naturaleza (digital/físico) y el
       horario diario en que se permite contactar por ahí. El canal físico es la
       **carta notarial**, reservada para la cobranza judicial.

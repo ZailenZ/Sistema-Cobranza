@@ -2,6 +2,7 @@ import {
   AUTOMATA_SEED,
   CANALES_SEED,
   ESTRATEGIAS_SEED,
+  MOROSOS_SEED,
   PLANTILLAS_SEED,
   SERVICIOS_SEED,
 } from "./catalogSeed";
@@ -24,7 +25,7 @@ import {
   type TicketGestion,
 } from "./localDb";
 import { aplicarEstrategia, clasificarServicio, recomendarEstrategia } from "./sponsorFlow";
-import type { EstrategiaCobranza, ServicioCobranza } from "./catalogSeed";
+import type { EstrategiaCobranza, ServicioCobranza, TipoMoroso } from "./catalogSeed";
 
 function isEmptyCatalog(id: any) {
   return getCatalog(id, []).length === 0;
@@ -58,6 +59,7 @@ function sembrarCarteraDeMuestra() {
   const sponsors = getSponsors();
   const servicios = getCatalog<ServicioCobranza>("servicios", []);
   const estrategias = getCatalog<EstrategiaCobranza>("estrategias", []);
+  const tiposMoroso = getCatalog<TipoMoroso>("morosos", []);
   const ahora = new Date().toISOString();
 
   const deudores: Deudor[] = [];
@@ -67,7 +69,7 @@ function sembrarCarteraDeMuestra() {
   CARTERA_MUESTRA.forEach((m, idx) => {
     const sponsor = sponsors.find((s) => s.codigo === m.sponsorCodigo);
     if (!sponsor) return;
-    const servicio = clasificarServicio(m.diasMora, servicios);
+    const servicio = clasificarServicio(m.diasMora, servicios, tiposMoroso);
 
     const deudor: Deudor = {
       id: newId("deu"),
@@ -117,7 +119,7 @@ function sembrarCarteraDeMuestra() {
     if (!CARTERA_MUESTRA[idx]?.gestionar) return;
     const deuda = deudas[idx];
     const servicio = servicios.find((s) => s.codigo === deuda.servicioCodigo);
-    const estrategia = recomendarEstrategia(deuda, servicio, estrategias);
+    const estrategia = recomendarEstrategia(deuda, servicio, estrategias, tiposMoroso);
     if (estrategia) aplicarEstrategia(ticket.id, estrategia.codigo);
   });
 }
@@ -131,6 +133,10 @@ export function seedAllIfEmpty() {
   // --- Catálogos ---
   if (isEmptyCatalog("servicios")) {
     setCatalog("servicios", SERVICIOS_SEED as any[]);
+  }
+
+  if (isEmptyCatalog("morosos")) {
+    setCatalog("morosos", MOROSOS_SEED as any[]);
   }
 
   if (isEmptyCatalog("canales")) {

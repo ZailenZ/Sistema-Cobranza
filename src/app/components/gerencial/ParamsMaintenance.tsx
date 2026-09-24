@@ -8,9 +8,13 @@ import {
   CANALES_SEED,
   ESTRATEGIAS_SEED,
   PLANTILLAS_SEED,
+  MOROSOS_SEED,
   SERVICIOS_SEED,
   ensureCatalogSeeded,
   formatCanalesFrecuencia,
+  formatRangoMora,
+  formatRangoSaldo,
+  tipoMorosoDeServicio,
   formatDuracion,
   formatListaCanales,
   type CanalContacto,
@@ -18,9 +22,11 @@ import {
   type EstrategiaCobranza,
   type PlantillaMensaje,
   type ServicioCobranza,
+  type TipoMoroso,
 } from "../../store/catalogSeed";
 import {
   Briefcase,
+  UserX,
   MessageSquareText,
   FileText,
   Bot,
@@ -36,6 +42,7 @@ import {
 
 const categories = [
   { id: "servicios",   name: "Catálogo de Servicio",    icon: Briefcase,         color: "teal" },
+  { id: "morosos",     name: "Catálogo de Morosos",     icon: UserX,             color: "orange" },
   { id: "canales",     name: "Catálogo de Canales",     icon: MessageSquareText, color: "blue" },
   { id: "plantillas",  name: "Catálogo de Plantillas",  icon: FileText,          color: "purple" },
   { id: "estrategias", name: "Catálogo de Estrategias", icon: Zap,               color: "rose" },
@@ -45,6 +52,7 @@ const categories = [
 const estadoOptions = ["Activo", "Inactivo"];
 
 const serviciosData = SERVICIOS_SEED;
+const morososData = MOROSOS_SEED;
 const canalesData = CANALES_SEED;
 const plantillasData = PLANTILLAS_SEED;
 const estrategiasData = ESTRATEGIAS_SEED;
@@ -53,6 +61,7 @@ const automataData = AUTOMATA_SEED;
 /** Catálogos vivos que necesitan las columnas/formularios para resolver referencias entre sí. */
 type CatalogCtx = {
   canales: CanalContacto[];
+  morosos: TipoMoroso[];
   plantillas: PlantillaMensaje[];
   servicios: ServicioCobranza[];
   estrategias: EstrategiaCobranza[];
@@ -87,7 +96,7 @@ const optionLabel = (o: FieldOption) => (typeof o === "string" ? o : o.label);
 /** Campos numéricos por catálogo: se convierten a número al guardar (vacío -> null si es opcional),
  *  para que las reglas de clasificación comparen números y no texto. */
 const CAMPOS_NUMERICOS: Record<string, { key: string; nullable?: boolean }[]> = {
-  servicios: [
+  morosos: [
     { key: "moraMin" },
     { key: "moraMax", nullable: true },
     { key: "saldoMin" },
@@ -118,10 +127,12 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
       return [
         { key: "codigo",       label: "Código",           sortable: true },
         { key: "tipoCobranza", label: "Tipo de Cobranza", sortable: true },
-        { key: "moraMin",      label: "Mora mín. (días)" },
-        { key: "moraMax",      label: "Mora máx. (días)", render: (i: any) => (i.moraMax === null || i.moraMax === "" ? "A más" : i.moraMax) },
-        { key: "saldoMin",     label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
-        { key: "saldoMax",     label: "Saldo máx. (S/)",  render: (i: any) => (i.saldoMax === null || i.saldoMax === "" ? "A más" : `S/ ${Number(i.saldoMax).toLocaleString()}`) },
+        {
+          key: "tipoMorosoCodigo", label: "Tipo de moroso", sortable: true,
+          render: (i: any) => tipoMorosoDeServicio(i, ctx.morosos)?.nombre || "—",
+        },
+        { key: "__mora",  label: "Mora",  render: (i: any) => formatRangoMora(tipoMorosoDeServicio(i, ctx.morosos)) },
+        { key: "__saldo", label: "Saldo", render: (i: any) => formatRangoSaldo(tipoMorosoDeServicio(i, ctx.morosos)) },
         { key: "canales",      label: "Canales y frecuencia", render: (i: any) => formatCanalesFrecuencia(i.canales, ctx.canales) },
         { key: "descripcion",  label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         {
@@ -132,6 +143,32 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
           },
         },
         { key: "estado",       label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+      ];
+    case "morosos":
+      return [
+        { key: "codigo",      label: "Código",          sortable: true },
+        { key: "nombre",      label: "Tipo de moroso",  sortable: true },
+        { key: "moraMin",     label: "Mora mín. (días)" },
+        { key: "moraMax",     label: "Mora máx. (días)", render: (i: any) => (i.moraMax === null || i.moraMax === "" ? "A más" : i.moraMax) },
+        { key: "saldoMin",    label: "Saldo mín. (S/)",  render: (i: any) => `S/ ${Number(i.saldoMin).toLocaleString()}` },
+        { key: "saldoMax",    label: "Saldo máx. (S/)",  render: (i: any) => (i.saldoMax === null || i.saldoMax === "" ? "A más" : `S/ ${Number(i.saldoMax).toLocaleString()}`) },
+        {
+          key: "__servicios", label: "Tipo de cobranza que le aplica",
+          render: (i: any) => ctx.servicios.find((s) => s.tipoMorosoCodigo === i.codigo)?.tipoCobranza || "—",
+        },
+        { key: "descripcion", label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
+        { key: "estado",      label: "Estado", render: (i: any) => estadoBadge(i.estado) },
+      ];
+    case "morosos":
+      return [
+        { key: "codigo",      label: "Código",            type: "text",   optional: true, placeholder: "Ej: MOR-006" },
+        { key: "nombre",      label: "Tipo de moroso",    type: "text",   placeholder: "Ej: Moroso ocasional" },
+        { key: "moraMin",     label: "Mora mínima (días)", type: "number", placeholder: "Ej: 1" },
+        { key: "moraMax",     label: "Mora máxima (días)", type: "number", optional: true, placeholder: "Vacío = a más" },
+        { key: "saldoMin",    label: "Saldo mínimo (S/)",  type: "number", placeholder: "Ej: 500" },
+        { key: "saldoMax",    label: "Saldo máximo (S/)",  type: "number", optional: true, placeholder: "Vacío = a más" },
+        { key: "descripcion", label: "Descripción", type: "textarea", optional: true, placeholder: "Describe a este tipo de moroso" },
+        { key: "estado",      label: "Estado",      type: "select", options: estadoOptions },
       ];
     case "canales":
       return [
@@ -182,6 +219,7 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
 function getCategoryData(cat: string): any[] {
   switch (cat) {
     case "servicios":   return serviciosData;
+    case "morosos":     return morososData;
     case "canales":     return canalesData;
     case "plantillas":  return plantillasData;
     case "estrategias": return estrategiasData;
@@ -194,16 +232,20 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
   const canalNombreOptions = ctx.canales.map((c) => c.nombre);
   const tipoCobranzaOptions = ctx.servicios.map((s) => s.tipoCobranza);
   const plantillaOptions: FieldOption[] = ctx.plantillas.map((p) => ({ value: p.codigo, label: p.nombre }));
+  const tipoMorosoOptions: FieldOption[] = ctx.morosos.map((m) => ({ value: m.codigo, label: `${m.nombre} (${m.codigo})` }));
 
   switch (cat) {
     case "servicios":
       return [
         { key: "codigo",       label: "Código de Servicio", type: "text",   optional: true, placeholder: "Ej: SRV-006" },
         { key: "tipoCobranza", label: "Tipo de Cobranza",   type: "text",   placeholder: "Ej: Cobranza temprana" },
-        { key: "moraMin",      label: "Mora mínima (días)", type: "number", placeholder: "Ej: 1" },
-        { key: "moraMax",      label: "Mora máxima (días)", type: "number", optional: true, placeholder: "Vacío = a más" },
-        { key: "saldoMin",     label: "Saldo mínimo (S/)",  type: "number", placeholder: "Ej: 500" },
-        { key: "saldoMax",     label: "Saldo máximo (S/)",  type: "number", optional: true, placeholder: "Vacío = a más" },
+        {
+          key: "tipoMorosoCodigo",
+          label: "Tipo de moroso",
+          type: "select",
+          options: tipoMorosoOptions,
+          help: "Los rangos de mora y de saldo de este servicio salen del tipo de moroso elegido (Catálogo de Morosos).",
+        },
         {
           key: "canales",
           label: "Canales y frecuencia",
@@ -683,6 +725,7 @@ export function ParamsMaintenance() {
   const ctx: CatalogCtx = useMemo(
     () => ({
       canales: (localData["canales"] || canalesData) as CanalContacto[],
+      morosos: (localData["morosos"] || morososData) as TipoMoroso[],
       plantillas: (localData["plantillas"] || plantillasData) as PlantillaMensaje[],
       servicios: (localData["servicios"] || serviciosData) as ServicioCobranza[],
       estrategias: (localData["estrategias"] || estrategiasData) as EstrategiaCobranza[],

@@ -28,11 +28,15 @@ import {
   formatCanalesFrecuencia,
   formatDuracion,
   formatListaCanales,
+  formatRangoMora,
+  formatRangoSaldo,
+  tipoMorosoDeServicio,
   type AutomataCatalogo,
   type CanalContacto,
   type EstrategiaCobranza,
   type PlantillaMensaje,
   type ServicioCobranza,
+  type TipoMoroso,
 } from "../../store/catalogSeed";
 import { getCurrentUser } from "../../store/session";
 
@@ -65,6 +69,8 @@ export function DashboardOperativo() {
   const estrategias = getCatalog<EstrategiaCobranza>("estrategias", []);
   const plantillas = getCatalog<PlantillaMensaje>("plantillas", []);
   const automatas = getCatalog<AutomataCatalogo>("automata", []);
+  const tiposMoroso = getCatalog<TipoMoroso>("morosos", []);
+  const tipoMorosoDe = (s: ServicioCobranza | null) => tipoMorosoDeServicio(s ?? undefined, tiposMoroso);
   const user = getCurrentUser();
   const misSponsor = user.rol === "Sponsor" ? getSponsors().find((s) => s.codigo === user.sponsorCodigo) : undefined;
 
@@ -167,8 +173,7 @@ export function DashboardOperativo() {
                 >
                   <p className="text-base font-semibold text-foreground">{s.tipoCobranza}</p>
                   <p className="mt-1.5 text-sm text-muted-foreground">
-                    Mora {s.moraMin}–{s.moraMax ?? "a más"} días · Saldo S/ {s.saldoMin.toLocaleString()}–
-                    {s.saldoMax ? s.saldoMax.toLocaleString() : "a más"}
+                    {tipoMorosoDe(s)?.nombre || "Sin tipo de moroso"} · Mora {formatRangoMora(tipoMorosoDe(s))}
                   </p>
                   <p className="mt-2 text-sm text-muted-foreground">
                     {estrategiasDe(s.tipoCobranza).length} estrategia(s) de hostigamiento
@@ -273,11 +278,10 @@ export function DashboardOperativo() {
                 <div className="rounded-xl border border-border p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Cuándo aplica</p>
                   <p className="mt-1.5 text-base text-foreground">
-                    Mora de {tipoDetalle.moraMin} a {tipoDetalle.moraMax ?? "más"} días
+                    {tipoMorosoDe(tipoDetalle)?.nombre || "—"} · mora de {formatRangoMora(tipoMorosoDe(tipoDetalle))}
                   </p>
                   <p className="text-base text-foreground">
-                    Saldo de {fmtSol(tipoDetalle.saldoMin)} a{" "}
-                    {tipoDetalle.saldoMax ? fmtSol(tipoDetalle.saldoMax) : "más"}
+                    Saldo de {formatRangoSaldo(tipoMorosoDe(tipoDetalle))}
                   </p>
                 </div>
                 <div className="rounded-xl border border-border p-4">

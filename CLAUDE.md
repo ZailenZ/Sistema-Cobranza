@@ -62,7 +62,7 @@ There is no test suite and no lint script configured.
 
 - [src/app/store/localDb.ts](src/app/store/localDb.ts) is the single data-access module: typed entities
   (`Sponsor`, `Deudor`, `Deuda`, `TicketGestion`, `MovimientoTicket`, `EnvioCobranza`) plus catalogs
-  (`servicios`, `canales`, `plantillas`, `estrategias`, `automata` via `CatalogId`). Every entity has paired
+  (`servicios`, `morosos`, `canales`, `plantillas`, `estrategias`, `automata` via `CatalogId`). Every entity has paired
   `getX()`/`setX()` functions that JSON-serialize to a `swcobranza:` prefixed key; there is no async/API layer to mirror.
   There is **no `operarios` catalog** — the "operators" in this system are the `automata` (bots), not people.
 - [src/app/store/catalogSeed.ts](src/app/store/catalogSeed.ts) is the **single source of truth for catalog seed
