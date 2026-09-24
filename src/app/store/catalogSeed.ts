@@ -20,7 +20,7 @@ export function ensureCatalogSeeded(id: CatalogId, seed: any[]) {
 //                                  Pertenece a un tipo de cobranza; el sponsor elige
 //                                  una estrategia por moroso.
 //   plantilla                    = el tipo de mensaje y su texto (Amistoso, Ultimátum…).
-//   canal                        = medio de contacto (SMS, WhatsApp, dron…).
+//   canal                        = medio de contacto (SMS, WhatsApp, carta notarial…).
 //   autómata                     = el robot que envía por cada canal digital.
 // ---------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ export const CANALES_SEED: CanalContacto[] = [
   { id: 2, codigo: "CAN-002", nombre: "Whatsapp", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "21:00", descripcion: "Mensajería instantánea con mayor tasa de lectura y respuesta.", estado: "Activo" },
   { id: 3, codigo: "CAN-003", nombre: "Correo", tipoCanal: "Digital", horaInicio: "00:00", horaFin: "23:59", descripcion: "Comunicación formal, deja constancia escrita del aviso enviado.", estado: "Activo" },
   { id: 4, codigo: "CAN-004", nombre: "Llamada (IVR)", tipoCanal: "Digital", horaInicio: "09:00", horaFin: "18:00", descripcion: "Llamada automatizada con menú de respuesta; solo en horario laboral.", estado: "Activo" },
-  { id: 5, codigo: "CAN-005", nombre: "Dron inteligente", tipoCanal: "Físico", horaInicio: "09:00", horaFin: "17:00", descripcion: "Entrega física de documentos en el domicilio del moroso.", estado: "Activo" },
+  { id: 5, codigo: "CAN-005", nombre: "Carta notarial", tipoCanal: "Físico", horaInicio: "09:00", horaFin: "17:00", descripcion: "Entrega física de la carta notarial en el domicilio del moroso.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un canal puede darse de baja sin eliminarlo.
   { id: 6, codigo: "CAN-006", nombre: "Telegram (ejemplo)", tipoCanal: "Digital", horaInicio: "08:00", horaFin: "20:00", descripcion: "Canal de ejemplo para probar la desactivación de un canal.", estado: "Inactivo" },
 ];
@@ -125,7 +125,7 @@ export const SERVICIOS_SEED: ServicioCobranza[] = [
     saldoMin: 16001,
     saldoMax: null,
     canales: [{ canalCodigo: "CAN-005", vecesPorDia: 1 }],
-    descripcion: "Notificación formal por dron para derivar el caso a proceso judicial.",
+    descripcion: "Notificación formal por carta notarial para derivar el caso a proceso judicial.",
     estado: "Activo",
   },
   // Ejemplo desactivado: demuestra que un tipo de cobranza puede darse de baja sin eliminarlo.
@@ -250,7 +250,7 @@ export const ESTRATEGIAS_SEED: EstrategiaCobranza[] = [
   { id: 9, codigo: "EST-09", nombre: "Estrategia 09", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002"], plantillaCodigo: "PLT-005", duracionDias: 0.5, tarifa: 11, descripcion: "Ultimátum por llamada y WhatsApp: aviso final antes de lo legal.", estado: "Activo" },
   { id: 10, codigo: "EST-10", nombre: "Estrategia 10", tipoCobranza: "Cobranza prejudicial", canalCodigos: ["CAN-004", "CAN-002", "CAN-003"], plantillaCodigo: "PLT-005", duracionDias: 2.5, tarifa: 12, descripcion: "Ultimátum sostenido por llamada, WhatsApp y correo.", estado: "Activo" },
   // Cobranza judicial
-  { id: 11, codigo: "EST-11", nombre: "Estrategia 11", tipoCobranza: "Cobranza judicial", canalCodigos: ["CAN-005"], plantillaCodigo: "PLT-006", duracionDias: 1, tarifa: 60, descripcion: "Carta notarial entregada por dron al domicilio; inicia el proceso judicial.", estado: "Activo" },
+  { id: 11, codigo: "EST-11", nombre: "Estrategia 11", tipoCobranza: "Cobranza judicial", canalCodigos: ["CAN-005"], plantillaCodigo: "PLT-006", duracionDias: 1, tarifa: 60, descripcion: "Carta notarial entregada por el notario en el domicilio; inicia el proceso judicial.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que una estrategia puede darse de baja sin eliminarla.
   { id: 12, codigo: "EST-12", nombre: "Estrategia de prueba (ejemplo)", tipoCobranza: "Cobranza Extra (ejemplo)", canalCodigos: ["CAN-006"], plantillaCodigo: "PLT-007", duracionDias: 1, tarifa: 0, descripcion: "Estrategia de ejemplo para probar la desactivación.", estado: "Inactivo" },
 ];
@@ -260,21 +260,20 @@ export type AutomataCatalogo = {
   id: number;
   codigo: string;
   nombre: string;
-  /** Rango de mensajes que el autómata puede procesar en un día. */
-  capacidadMinPorDia: number;
+  /** Tope de mensajes que el autómata puede procesar en un día (el mínimo siempre es 0). */
   capacidadMaxPorDia: number;
   descripcion: string;
   estado: "Activo" | "Inactivo";
 };
 
 export const AUTOMATA_SEED: AutomataCatalogo[] = [
-  { id: 1, codigo: "AUT-001", nombre: "Autómata de SMS", capacidadMinPorDia: 500, capacidadMaxPorDia: 2500, descripcion: "Robot que envía los SMS masivos de las estrategias.", estado: "Activo" },
-  { id: 2, codigo: "AUT-002", nombre: "Autómata de Whatsapp", capacidadMinPorDia: 800, capacidadMaxPorDia: 3000, descripcion: "Robot que envía los mensajes de WhatsApp y recibe las respuestas.", estado: "Activo" },
-  { id: 3, codigo: "AUT-003", nombre: "Autómata de correos", capacidadMinPorDia: 200, capacidadMaxPorDia: 1000, descripcion: "Robot que envía los avisos formales por correo electrónico.", estado: "Activo" },
-  { id: 4, codigo: "AUT-004", nombre: "Autómata de llamadas", capacidadMinPorDia: 100, capacidadMaxPorDia: 500, descripcion: "Robot de llamadas IVR con menú de respuesta para el moroso.", estado: "Activo" },
-  { id: 5, codigo: "AUT-005", nombre: "Autómata de dron", capacidadMinPorDia: 5, capacidadMaxPorDia: 40, descripcion: "Dron que entrega las cartas notariales en el domicilio del moroso.", estado: "Activo" },
+  { id: 1, codigo: "AUT-001", nombre: "Autómata de SMS", capacidadMaxPorDia: 2500, descripcion: "Robot que envía los SMS masivos de las estrategias.", estado: "Activo" },
+  { id: 2, codigo: "AUT-002", nombre: "Autómata de Whatsapp", capacidadMaxPorDia: 3000, descripcion: "Robot que envía los mensajes de WhatsApp y recibe las respuestas.", estado: "Activo" },
+  { id: 3, codigo: "AUT-003", nombre: "Autómata de correos", capacidadMaxPorDia: 1000, descripcion: "Robot que envía los avisos formales por correo electrónico.", estado: "Activo" },
+  { id: 4, codigo: "AUT-004", nombre: "Autómata de llamadas", capacidadMaxPorDia: 500, descripcion: "Robot de llamadas IVR con menú de respuesta para el moroso.", estado: "Activo" },
+  { id: 5, codigo: "AUT-005", nombre: "Notario", capacidadMaxPorDia: 40, descripcion: "Notario que entrega las cartas notariales en el domicilio del moroso.", estado: "Activo" },
   // Ejemplo desactivado: demuestra que un autómata puede darse de baja sin eliminarlo.
-  { id: 6, codigo: "AUT-006", nombre: "Autómata de Telegram (ejemplo)", capacidadMinPorDia: 100, capacidadMaxPorDia: 800, descripcion: "Autómata de ejemplo para probar la desactivación.", estado: "Inactivo" },
+  { id: 6, codigo: "AUT-006", nombre: "Autómata de Telegram (ejemplo)", capacidadMaxPorDia: 800, descripcion: "Autómata de ejemplo para probar la desactivación.", estado: "Inactivo" },
 ];
 
 // --- Helpers de formato compartidos por las pantallas ---

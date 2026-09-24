@@ -13,6 +13,13 @@ npm run dev  # servidor de desarrollo
 npm run build  # build de producción (dist/)
 ```
 
+## Acceso
+
+La pantalla de inicio de sesión está en `/#/login` (Seguridad › Inicio de sesión, o
+"Cerrar sesión" en el pie del menú). Pide **DNI y contraseña**, y ofrece además
+**ingresar escaneando un QR** (simulado). Cualquier credencial entra: el prototipo
+no valida nada, lleva al inicio del perfil activo.
+
 ## Acceso y perfiles (modo demo)
 
 El rol está **fijo por usuario**. El selector de perfil del encabezado es solo una
@@ -41,12 +48,15 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
       la clasificación, y los canales que usa con su frecuencia (cuántos mensajes
       al día por cada canal).
     - **Catálogo de canales**: medio de contacto, su naturaleza (digital/físico) y el
-      horario diario en que se permite contactar por ahí.
+      horario diario en que se permite contactar por ahí. El canal físico es la
+      **carta notarial**, reservada para la cobranza judicial.
     - **Catálogo de plantillas**: el tipo de mensaje (Amistoso, Recordatorio,
       Aviso formal, Advertencia, Ultimátum, Carta notarial) y su texto real.
     - **Catálogo de estrategias**: cómo se hostiga a un moroso — canal(es) + tipo
       de mensaje + duración + tarifa, asociado a un tipo de cobranza.
-    - **Catálogo de autómata**: el robot que envía por cada canal y su capacidad.
+    - **Catálogo de autómata**: el robot que envía por cada canal y su capacidad
+      máxima por día (el mínimo siempre es 0). La carta notarial la entrega un
+      **notario**, no un robot.
     Cada uno con estados vacío/lista/edición y las seis acciones: listar, buscar,
     ver detalle, agregar, modificar, eliminar. Cada catálogo incluye un registro de
     ejemplo desactivado, para mostrar que se puede dar de baja sin eliminarlo.
@@ -63,9 +73,13 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
       gráfico de línea o histograma. Los filtros de tipo y rango de fecha son
       demostrativos; los datos son de muestra.
 - **Operativo — flujo de autoservicio del Sponsor:**
-  1. **Dashboard**: bienvenida y vistazo del flujo completo (4 pasos), con los
-     tipos de cobranza del sistema como referencia informativa.
-  2. **Reservar tickets**: el sponsor **sube su lista de morosos directamente**
+  1. **Dashboard**: bienvenida y vistazo del flujo completo, con los tipos de
+     cobranza del sistema como referencia y la **disponibilidad de cada canal**
+     (operadores, capacidad total y capacidad ocupada hoy).
+  2. **Reservar tickets**: antes de cualquier carga, el sponsor debe llenar sus
+     datos y firmar el **acuerdo de gestión de cobranza** (confidencialidad de los
+     datos de los morosos); recién entonces se habilita la subida. Luego
+     **sube su lista de morosos directamente**
      (simulado: dos dropzones — archivo morosos y archivo deuda — sin
      procesamiento real de archivo). El sponsor **no elige** el tipo de cobranza:
      al confirmar, el sistema clasifica automáticamente a cada moroso según su
@@ -75,14 +89,19 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
      duración y tarifa); al aplicarla se ejecuta la gestión y se acumula el costo.
      El sistema **recomienda** una estrategia según los días de mora y el saldo del
      moroso y la deja preseleccionada, pero la decisión final es del sponsor.
+     Elegir una estrategia **no la ejecuta**: queda pendiente y se puede cambiar las
+     veces que haga falta; al final el sponsor revisa todo el lote en una pantalla de
+     confirmación (con opción de editar moroso por moroso) y recién ahí se envía.
   3. **Entrega cobranza**: reporte de las gestiones automáticas enviadas (canal,
      operador/autómata, plantilla) y su respuesta (afirmativa/negativa/sin
      respuesta), con detalle por moroso y el mensaje exacto enviado.
   Un usuario Sponsor solo ve su propia cartera; el Administrador ve la cola
   interna completa (comportamiento previo, sin el flujo de autoservicio).
 - **Reportes operativos (solo ver/imprimir/descargar):** Reporte de gestión de
-  deudas — consolidado final de la cartera del sponsor, con búsqueda, paginación
-  y detalle por moroso.
+  deudas — consolidado final de la cartera del sponsor, con búsqueda, paginación y
+  detalle por moroso. Se puede ver como **tabla, histograma o diagrama de pastel**
+  (los gráficos usan datos de muestra fijos). No muestra con qué estrategia se
+  trabajó a cada moroso. Al cierre, el sponsor puede **calificar la cobranza**.
 - **Técnico (restringido, fuera del flujo operativo):** Monitor Batch Aplicativo
   (solo lectura), Mantenimiento de BD, Backup.
 

@@ -47,7 +47,7 @@ type MensajePendiente = {
 
 function construirFila(a: AutomataCatalogo): FilaAutomata {
   const rnd = crearRandom(a.codigo);
-  const mensajesEnviados = a.estado === "Activo" ? rnd(a.capacidadMinPorDia, a.capacidadMaxPorDia) : 0;
+  const mensajesEnviados = a.estado === "Activo" ? rnd(Math.round(a.capacidadMaxPorDia * 0.25), a.capacidadMaxPorDia) : 0;
   const respuestas = Math.round(mensajesEnviados * (rnd(12, 46) / 100));
   return {
     ...a,
@@ -152,7 +152,6 @@ export function Automatas() {
                 {[
                   { label: "Descripción", value: seleccionado.descripcion },
                   { label: "Mensajes por hora", value: String(seleccionado.mensajesPorHora) },
-                  { label: "Capacidad mín. por día", value: seleccionado.capacidadMinPorDia.toLocaleString("es-PE") },
                   { label: "Capacidad máx. por día", value: seleccionado.capacidadMaxPorDia.toLocaleString("es-PE") },
                   { label: "Morosos asignados", value: seleccionado.morososAsignados.toLocaleString("es-PE") },
                   { label: "Mensajes enviados hoy", value: seleccionado.mensajesEnviados.toLocaleString("es-PE") },

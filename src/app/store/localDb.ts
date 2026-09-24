@@ -9,7 +9,7 @@ const STORAGE_PREFIX = "swcobranza:";
 // navegador de un usuario que abrió una versión anterior del prototipo nunca
 // se migran solos; sin este chequeo, una pantalla nueva que espere un campo
 // que no existía (p. ej. Servicio.saldoMin) rompe al leer datos con la forma vieja.
-const SCHEMA_VERSION = 8;
+const SCHEMA_VERSION = 9;
 const SCHEMA_VERSION_KEY = `${STORAGE_PREFIX}schemaVersion`;
 
 /** Si el esquema de catálogos/entidades cambió, limpia los datos simulados persistidos
@@ -243,4 +243,51 @@ export function addEnviosCobranza(items: EnvioCobranza[]) {
 
 export function newId(prefix: string) {
   return `${prefix}_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+}
+
+// --- Acuerdo de gestión de cobranza ---
+// Antes de poder subir su lista de morosos, el sponsor debe llenar sus datos y
+// aceptar el acuerdo de confidencialidad. Se guarda por sponsor para que no se
+// le vuelva a pedir en cada visita.
+export type AcuerdoSponsor = {
+  sponsorCodigo: string;
+  nombreCliente: string;
+  documento: string;
+  telefono: string;
+  correo: string;
+  numMorosos: string;
+  fecha: string;
+};
+
+export function getAcuerdos(): AcuerdoSponsor[] {
+  return readJson<AcuerdoSponsor[]>(txKey("acuerdos"), []);
+}
+export function getAcuerdoDe(sponsorCodigo: string): AcuerdoSponsor | undefined {
+  return getAcuerdos().find((a) => a.sponsorCodigo === sponsorCodigo);
+}
+export function saveAcuerdo(acuerdo: AcuerdoSponsor) {
+  const next = [...getAcuerdos().filter((a) => a.sponsorCodigo !== acuerdo.sponsorCodigo), acuerdo];
+  writeJson(txKey("acuerdos"), next as unknown as Json);
+  return next;
+}
+
+// --- Calificación del servicio ---
+// Al cerrar el reporte final, el sponsor puede calificar cómo le fue con el sistema.
+export type CalificacionSponsor = {
+  sponsorCodigo: string;
+  estrellas: number;
+  comentario: string;
+  fecha: string;
+};
+
+export function getCalificaciones(): CalificacionSponsor[] {
+  return readJson<CalificacionSponsor[]>(txKey("calificaciones"), []);
+}
+export function getCalificacionDe(sponsorCodigo: string): CalificacionSponsor | undefined {
+  return getCalificaciones().find((c) => c.sponsorCodigo === sponsorCodigo);
+}
+export function saveCalificacion(calificacion: CalificacionSponsor) {
+  const next = [...getCalificaciones().filter((c) => c.sponsorCodigo !== calificacion.sponsorCodigo), calificacion];
+  writeJson(txKey("calificaciones"), next as unknown as Json);
+  return next;
 }

@@ -22,6 +22,8 @@ import {
   Users,
   Wrench,
   Zap,
+  LogIn,
+  KeyRound,
 } from "lucide-react";
 
 import { Button } from "../ui/button";
@@ -44,6 +46,8 @@ const menuBlocks: MenuItem[] = [
     icon: <ShieldCheck className="size-4" />,
     module: "seguridad",
     children: [
+      { title: "Inicio de sesión", icon: <LogIn className="size-4" />, path: "/login" },
+      { title: "Métodos de acceso", icon: <KeyRound className="size-4" />, path: "/acceso-alternativo" },
       { title: "Perfiles y permisos", icon: <ShieldCheck className="size-4" />, path: "/seguridad/perfiles" },
       { title: "Gestión de usuarios", icon: <Users className="size-4" />, path: "/seguridad/usuarios" },
     ],

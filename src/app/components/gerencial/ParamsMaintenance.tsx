@@ -94,7 +94,7 @@ const CAMPOS_NUMERICOS: Record<string, { key: string; nullable?: boolean }[]> = 
     { key: "saldoMax", nullable: true },
   ],
   estrategias: [{ key: "duracionDias" }, { key: "tarifa" }],
-  automata: [{ key: "capacidadMinPorDia" }, { key: "capacidadMaxPorDia" }],
+  automata: [{ key: "capacidadMaxPorDia" }],
 };
 
 function coerceItem(category: string, data: Record<string, any>) {
@@ -170,7 +170,6 @@ function getCategoryColumns(cat: string, ctx: CatalogCtx): any[] {
       return [
         { key: "codigo",             label: "Código", sortable: true },
         { key: "nombre",             label: "Autómata", sortable: true },
-        { key: "capacidadMinPorDia", label: "Capacidad mín. por día", render: (i: any) => Number(i.capacidadMinPorDia || 0).toLocaleString() },
         { key: "capacidadMaxPorDia", label: "Capacidad máx. por día", render: (i: any) => Number(i.capacidadMaxPorDia || 0).toLocaleString() },
         { key: "descripcion",        label: "Descripción", render: (i: any) => <span className="line-clamp-2 max-w-xs">{i.descripcion || "—"}</span> },
         { key: "estado",             label: "Estado", render: (i: any) => estadoBadge(i.estado) },
@@ -248,7 +247,6 @@ function getCategoryFormFields(cat: string, ctx: CatalogCtx): FormField[] {
       return [
         { key: "codigo",             label: "Código de Autómata",         type: "text",   optional: true, placeholder: "Ej: AUT-007" },
         { key: "nombre",             label: "Autómata",                   type: "text",   placeholder: "Ej: Autómata de SMS" },
-        { key: "capacidadMinPorDia", label: "Capacidad mín. por día",     type: "number", placeholder: "Ej: 500" },
         { key: "capacidadMaxPorDia", label: "Capacidad máx. por día",     type: "number", placeholder: "Ej: 2500" },
         { key: "descripcion",        label: "Descripción",                type: "textarea", optional: true, placeholder: "Qué envía este autómata" },
         { key: "estado",             label: "Estado",                     type: "select", options: estadoOptions },

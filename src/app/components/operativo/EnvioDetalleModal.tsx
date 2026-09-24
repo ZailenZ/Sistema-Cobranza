@@ -17,8 +17,9 @@ export type EnvioDetalleData = {
   deudorNombre: string;
   /** Canal(es) por los que se envió la gestión, ya formateados ("Llamada (IVR) y Whatsapp"). */
   canalesTexto: string;
-  /** Estrategia aplicada, formateada ("EST-03 · Estrategia 03"). */
-  estrategiaTexto: string;
+  /** Estrategia aplicada, formateada ("EST-03 · Estrategia 03"). Opcional: el reporte
+   *  final de cobranzas no muestra con qué estrategia se trabajó al moroso. */
+  estrategiaTexto?: string;
   plantillaNombre: string;
   /** Texto de la plantilla del catálogo (con marcadores {nombre}/{saldo}/{mora}/{sponsor}), si tiene una asociada. */
   plantillaMensaje?: string;
@@ -99,7 +100,7 @@ export function EnvioDetalleModal({
               </p>
               <div className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-3">
                 <Campo label="Tipo de cobranza" value={tipoCobranza} />
-                <Campo label="Estrategia" value={estrategiaTexto} />
+                {estrategiaTexto && <Campo label="Estrategia" value={estrategiaTexto} />}
                 <Campo label="Respuesta" value={envio.respuesta} />
                 <Campo label="Canal(es)" value={canalesTexto} />
                 <Campo label="Operador" value={envio.operador} />

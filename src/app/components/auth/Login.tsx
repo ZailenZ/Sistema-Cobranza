@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import { Eye, EyeOff, QrCode, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, QrCode, ScanLine, ShieldCheck } from "lucide-react";
 
 import { AuthShell } from "./AuthShell";
 import { getCurrentRole, ROLE_HOME } from "../../store/session";
@@ -20,11 +20,21 @@ import { Label } from "../ui/label";
 
 export function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [dni, setDni] = useState("");
+  // Escaneo de QR simulado: "lee" el código un momento y luego entra al sistema.
+  const [escaneando, setEscaneando] = useState(false);
   const navigate = useNavigate();
+
+  const entrar = () => navigate(ROLE_HOME[getCurrentRole()]);
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    navigate(ROLE_HOME[getCurrentRole()]);
+    entrar();
+  };
+
+  const escanearQR = () => {
+    setEscaneando(true);
+    window.setTimeout(entrar, 1400);
   };
 
   return (
@@ -59,13 +69,18 @@ export function Login() {
             <div className="rounded-[22px] border border-border bg-background p-5">
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="grid gap-2">
-                  <Label htmlFor="login-identity">Usuario o correo</Label>
+                  <Label htmlFor="login-dni">DNI</Label>
                   <Input
-                    id="login-identity"
+                    id="login-dni"
                     type="text"
-                    placeholder="usuario@empresa.com"
-                    className="h-11 rounded-xl border-border/80 bg-background px-4"
+                    inputMode="numeric"
+                    maxLength={8}
+                    value={dni}
+                    onChange={(e) => setDni(e.target.value.replace(/D/g, ""))}
+                    placeholder="12345678"
+                    className="h-11 rounded-xl border-border/80 bg-background px-4 tracking-[0.2em]"
                   />
+                  <p className="text-xs text-muted-foreground">8 dígitos, sin puntos ni guiones.</p>
                 </div>
 
                 <div className="grid gap-2">
@@ -126,20 +141,35 @@ export function Login() {
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-sm font-semibold text-foreground">
-                    Acceso alternativo con QR
-                  </h3>
+                  <h3 className="text-sm font-semibold text-foreground">Ingresar escaneando un QR</h3>
                   <p className="text-xs leading-5 text-muted-foreground">
-                    Disponible en terminales autorizadas.
+                    Apunta la cámara al código y entras sin escribir tu DNI.
                   </p>
                 </div>
               </div>
 
               <div className="mt-4 flex flex-1 items-center justify-center py-2">
-                <div className="flex h-36 w-36 items-center justify-center rounded-[20px] border border-dashed border-border bg-background">
-                  <QrCode className="size-12 text-muted-foreground" />
+                <div className="relative flex h-36 w-36 items-center justify-center overflow-hidden rounded-[20px] border border-dashed border-border bg-background">
+                  <QrCode className={escaneando ? "size-12 text-primary" : "size-12 text-muted-foreground"} />
+                  {escaneando && (
+                    <span className="absolute inset-x-3 top-3 h-0.5 animate-pulse rounded-full bg-primary" />
+                  )}
                 </div>
               </div>
+
+              <Button
+                type="button"
+                variant={escaneando ? "secondary" : "outline"}
+                onClick={escanearQR}
+                disabled={escaneando}
+                className="h-10 w-full rounded-xl"
+              >
+                <ScanLine className="size-4" />
+                {escaneando ? "Leyendo código…" : "Escanear QR"}
+              </Button>
+              <p className="mt-2 text-center text-[11px] text-muted-foreground">
+                Prototipo: el escaneo es simulado.
+              </p>
             </div>
           </div>
         </CardContent>
@@ -147,7 +177,7 @@ export function Login() {
         <CardFooter className="border-t border-border/60 px-8 py-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2">
             <ShieldCheck className="size-4" />
-            Acceso controlado según rol y permisos.
+            Acceso controlado según rol y permisos. Prototipo: cualquier DNI y contraseña ingresan.
           </div>
         </CardFooter>
       </Card>

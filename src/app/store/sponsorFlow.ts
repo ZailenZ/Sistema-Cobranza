@@ -122,7 +122,7 @@ export function automataParaCanal(canalNombre: string, automatas: AutomataCatalo
   if (clave.includes("whatsapp")) return automatas.find((a) => a.nombre.toLowerCase().includes("whatsapp"));
   if (clave.includes("correo")) return automatas.find((a) => a.nombre.toLowerCase().includes("correo"));
   if (clave.includes("llamada")) return automatas.find((a) => a.nombre.toLowerCase().includes("llamada"));
-  if (clave.includes("dron")) return automatas.find((a) => a.nombre.toLowerCase().includes("dron"));
+  if (clave.includes("notarial")) return automatas.find((a) => a.nombre.toLowerCase().includes("notario"));
   return undefined;
 }
 

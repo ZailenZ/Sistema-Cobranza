@@ -5,6 +5,7 @@ import {
   CheckSquare,
   FileUp,
   PhoneCall,
+  ScrollText,
   Sparkles,
   Ticket,
   X,
@@ -22,10 +23,12 @@ import {
   getTicketsGestion,
 } from "../../store/localDb";
 import { seedAllIfEmpty } from "../../store/seedAll";
+import { automataParaCanal } from "../../store/sponsorFlow";
 import {
   formatCanalesFrecuencia,
   formatDuracion,
   formatListaCanales,
+  type AutomataCatalogo,
   type CanalContacto,
   type EstrategiaCobranza,
   type PlantillaMensaje,
@@ -40,12 +43,28 @@ const accionesRapidas = [
 
 const fmtSol = (n: number) => `S/ ${Number(n).toLocaleString("es-PE")}`;
 
+/** Ocupación simulada de un canal. Determinista a partir del código del canal, para
+ *  que la disponibilidad no cambie en cada recarga durante una demostración. */
+function disponibilidadCanal(canal: CanalContacto, automata: AutomataCatalogo | undefined) {
+  let s = 0;
+  for (const c of canal.codigo) s = (s * 31 + c.charCodeAt(0)) % 2147483647;
+  const rnd = (min: number, max: number) => {
+    s = (s * 1103515245 + 12345) % 2147483648;
+    return min + Math.floor((s / 2147483648) * (max - min + 1));
+  };
+  const operadores = rnd(4, 12);
+  const capacidadTotal = (automata?.capacidadMaxPorDia ?? 0) * operadores;
+  const ocupados = Math.round(capacidadTotal * (rnd(18, 72) / 100));
+  return { operadores, capacidadTotal, ocupados };
+}
+
 export function DashboardOperativo() {
   seedAllIfEmpty();
   const servicios = getCatalog<ServicioCobranza>("servicios", []);
   const canales = getCatalog<CanalContacto>("canales", []);
   const estrategias = getCatalog<EstrategiaCobranza>("estrategias", []);
   const plantillas = getCatalog<PlantillaMensaje>("plantillas", []);
+  const automatas = getCatalog<AutomataCatalogo>("automata", []);
   const user = getCurrentUser();
   const misSponsor = user.rol === "Sponsor" ? getSponsors().find((s) => s.codigo === user.sponsorCodigo) : undefined;
 
@@ -159,6 +178,57 @@ export function DashboardOperativo() {
                   </span>
                 </button>
               ))}
+          </div>
+        </div>
+
+        {/* Disponibilidad de los canales por los que el sistema hostiga */}
+        <div>
+          <h3 className="mb-1 text-xl font-semibold text-foreground">Disponibilidad de canales</h3>
+          <p className="mb-4 text-base text-muted-foreground">
+            Capacidad de envío que tiene hoy cada canal del sistema. Mientras más libre esté un canal,
+            más rápido sale la gestión de tus morosos.
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {canales
+              .filter((c) => c.estado === "Activo" && !c.nombre.toLowerCase().includes("notarial"))
+              .map((c) => {
+                const automata = automataParaCanal(c.nombre, automatas);
+                const { operadores, capacidadTotal, ocupados } = disponibilidadCanal(c, automata);
+                const pct = capacidadTotal > 0 ? Math.min(100, (ocupados / capacidadTotal) * 100) : 0;
+                return (
+                  <div key={c.codigo} className="rounded-xl border border-border bg-card p-5">
+                    <p className="text-base font-semibold text-foreground">{c.nombre}</p>
+                    <dl className="mt-3 space-y-1.5 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Operadores:</dt>
+                        <dd className="font-semibold text-foreground">{operadores}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Capacidad total:</dt>
+                        <dd className="font-semibold text-foreground">{capacidadTotal.toLocaleString("es-PE")}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted-foreground">Ocupados:</dt>
+                        <dd className="font-semibold text-foreground">{ocupados.toLocaleString("es-PE")}</dd>
+                      </div>
+                    </dl>
+                    <div className="mt-3 h-4 w-full overflow-hidden rounded-full border border-border bg-muted">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${pct}%` }} />
+                    </div>
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      {pct.toFixed(0)}% ocupado · atiende de {c.horaInicio} a {c.horaFin}
+                    </p>
+                  </div>
+                );
+              })}
+          </div>
+
+          <div className="mt-4 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <ScrollText className="mt-0.5 size-5 shrink-0 text-amber-700" />
+            <p className="text-sm leading-6 text-amber-900">
+              También disponemos del canal de <strong>carta notarial</strong>, atendido por un notario y
+              reservado únicamente para ejecutar una <strong>cobranza judicial</strong>.
+            </p>
           </div>
         </div>
 
