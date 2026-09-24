@@ -142,7 +142,7 @@ export function EntregaCobranza() {
                   render: (i: EnvioCobranza) => estrategiaDe(i.estrategiaCodigo)?.nombre || i.estrategiaCodigo,
                 },
                 { key: "canalIds", label: "Canal(es)", render: (i: EnvioCobranza) => formatListaCanales(i.canalIds, canales) },
-                { key: "operador", label: "Operador" },
+                { key: "operador", label: "Autómata" },
                 {
                   key: "plantillaCodigo", label: "Mensaje",
                   render: (i: EnvioCobranza) => plantillaDe(i.plantillaCodigo)?.nombre || "—",

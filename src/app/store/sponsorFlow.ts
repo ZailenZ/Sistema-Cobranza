@@ -268,7 +268,7 @@ export function simularCargaMorosos(sponsorCodigo: string): ResultadoCargaMoroso
   };
 }
 
-let operadorContador = 1;
+
 
 /** El sponsor eligió una estrategia para hostigar a un moroso: el ticket pasa a RE y el sistema
  *  simula el envío por los canales de la estrategia (con su autómata y tipo de mensaje) más la
@@ -299,7 +299,7 @@ export function aplicarEstrategia(ticketId: string, estrategiaCodigo: string): E
     estrategiaCodigo: estrategia.codigo,
     canalIds: [...estrategia.canalCodigos],
     automataCodigo: automata?.codigo,
-    operador: automata ? `${canalPrincipal?.nombre}${operadorContador++}` : "Notificación física",
+    operador: automata ? `${automata.codigo} · ${automata.nombre}` : "Sin autómata asignado",
     plantillaCodigo: plantilla?.codigo,
     tarifa: estrategia.tarifa,
     respuesta: randomRespuesta(),

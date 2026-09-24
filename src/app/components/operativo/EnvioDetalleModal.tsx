@@ -107,7 +107,7 @@ export function EnvioDetalleModal({
                 {estrategiaTexto && <Campo label="Estrategia" value={estrategiaTexto} />}
                 <Campo label="Respuesta" value={envio.respuesta} />
                 <Campo label="Canal(es)" value={canalesTexto} />
-                <Campo label="Operador" value={envio.operador} />
+                <Campo label="Autómata" value={envio.operador} />
                 <Campo label="Plantilla" value={plantillaNombre} />
                 <Campo label="Mora" value={`${diasMora} días`} />
                 <Campo label="Nro." value={telefono || "—"} />
