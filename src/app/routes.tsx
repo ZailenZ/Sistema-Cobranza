@@ -1,5 +1,6 @@
 import { createHashRouter, Navigate } from "react-router";
 import { MainLayout } from "./components/layout/MainLayout";
+import { Arquitectura } from "./components/Arquitectura";
 import { Login } from "./components/auth/Login";
 import { MetodosAcceso } from "./components/auth/MetodosAcceso";
 import { PerfilesPermisos } from "./components/seguridad/PerfilesPermisos";
@@ -39,6 +40,9 @@ export const router = createHashRouter([
     Component: MainLayout,
     children: [
       { index: true, Component: RootRedirect },
+
+      // --- Arquitectura del sistema (apertura de la presentación) ---
+      { path: "arquitectura", Component: Arquitectura },
 
       // --- Seguridad ---
       { path: "seguridad/perfiles", Component: PerfilesPermisos },

@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bot,
   Cpu,
+  Network,
   RefreshCw,
   Building2,
   ChevronDown,
@@ -31,18 +32,26 @@ import {
 import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { cn } from "../ui/utils";
-import { type ModuleKey, ROLE_LABEL, useCurrentRole, canAccess } from "../../store/session";
+import { type ModuleKey, type Role, ROLE_LABEL, useCurrentRole, canAccess } from "../../store/session";
 
 interface MenuItem {
   title: string;
   icon: React.ReactNode;
   path?: string;
+  /** Si se define, el ítem solo es visible para estos roles. */
+  roles?: Role[];
   /** Si se define, el ítem (y sus hijos) solo es visible si el rol tiene acceso a este módulo. */
   module?: ModuleKey;
   children?: MenuItem[];
 }
 
 const menuBlocks: MenuItem[] = [
+  {
+    title: "Arquitectura del sistema",
+    icon: <Network className="size-4" />,
+    path: "/arquitectura",
+    roles: ["Administrador"],
+  },
   {
     title: "Seguridad",
     icon: <ShieldCheck className="size-4" />,
@@ -136,6 +145,7 @@ const menuBlocks: MenuItem[] = [
 // Un ítem con `module` se oculta (con toda su rama) si el rol no tiene acceso;
 // un grupo sin `module` propio se oculta si, tras filtrar, no le queda ningún hijo visible.
 function filterMenuItem(item: MenuItem, role: ReturnType<typeof useCurrentRole>): MenuItem | null {
+  if (item.roles && !item.roles.includes(role)) return null;
   if (item.module && !canAccess(item.module, role)) return null;
 
   if (item.children) {

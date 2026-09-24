@@ -86,7 +86,7 @@ export const ROLE_MODULES: Record<Role, ModuleKey[]> = {
 
 // Pantalla de inicio por rol (a dónde redirige "/").
 export const ROLE_HOME: Record<Role, string> = {
-  Administrador: "/gerencial/dashboard",
+  Administrador: "/arquitectura",
   GestorSeguridad: "/seguridad/usuarios",
   Gerente: "/gerencial/dashboard",
   Sponsor: "/operativo/dashboard",
