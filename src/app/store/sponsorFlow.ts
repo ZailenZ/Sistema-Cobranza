@@ -285,6 +285,28 @@ export function simularCargaMorosos(sponsorCodigo: string): ResultadoCargaMoroso
 
 
 
+/** Prefijo con el que se identifica la instancia de autómata que atendió un envío,
+ *  tomado del canal por el que salió: SMS, WHATSAPP, CORREO, IVR, CARTA. */
+function prefijoDeCanal(canalNombre: string): string {
+  const clave = canalNombre.toLowerCase();
+  if (clave.includes("sms")) return "SMS";
+  if (clave.includes("whatsapp")) return "WHATSAPP";
+  if (clave.includes("correo")) return "CORREO";
+  if (clave.includes("llamada")) return "IVR";
+  if (clave.includes("notarial")) return "CARTA";
+  if (clave.includes("telegram")) return "TELEGRAM";
+  return canalNombre.toUpperCase().replace(/[^A-Z]/g, "").slice(0, 8) || "AUT";
+}
+
+/** Cada canal lleva su propia numeración de instancias: SMS-01, SMS-02, WHATSAPP-01… */
+const instanciasPorCanal: Record<string, number> = {};
+function etiquetaAutomata(canalNombre: string | undefined): string {
+  if (!canalNombre) return "Sin autómata asignado";
+  const prefijo = prefijoDeCanal(canalNombre);
+  instanciasPorCanal[prefijo] = (instanciasPorCanal[prefijo] ?? 0) + 1;
+  return `${prefijo}-${String(instanciasPorCanal[prefijo]).padStart(2, "0")}`;
+}
+
 /** El sponsor eligió una estrategia para hostigar a un moroso: el ticket pasa a RE y el sistema
  *  simula el envío por los canales de la estrategia (con su autómata y tipo de mensaje) más la
  *  respuesta del moroso. Devuelve el envío generado. */
@@ -314,7 +336,7 @@ export function aplicarEstrategia(ticketId: string, estrategiaCodigo: string): E
     estrategiaCodigo: estrategia.codigo,
     canalIds: [...estrategia.canalCodigos],
     automataCodigo: automata?.codigo,
-    operador: automata ? `${automata.codigo} · ${automata.nombre}` : "Sin autómata asignado",
+    operador: automata ? etiquetaAutomata(canalPrincipal?.nombre) : "Sin autómata asignado",
     plantillaCodigo: plantilla?.codigo,
     tarifa: estrategia.tarifa,
     respuesta: randomRespuesta(),
