@@ -8,7 +8,7 @@ import { PageHeader } from "./shared/PageHeader";
 // Es lo primero que se muestra en la presentación: el diagrama completo del
 // sistema, con los accesos directos a cada módulo debajo.
 
-const IMAGEN = `${import.meta.env.BASE_URL}arquitectura-cobranza.png`;
+const IMAGEN = `${import.meta.env.BASE_URL}arquitectura-cobranza-v2.png`;
 
 const MODULOS = [
   { titulo: "1. Seguridad", detalle: "Login, métodos de acceso, perfiles y usuarios.", path: "/seguridad/perfiles" },
