@@ -34,6 +34,18 @@ function serie(semilla: string, min: number, max: number) {
   });
 }
 
+/** Reparte 100% entre afirmativa, negativa y sin respuesta en cada periodo: son
+ *  porcentajes de un mismo total, así que tienen que sumar 100 y no más. */
+function seriesDeRespuestas() {
+  const afirmativa = serie("afirm", 18, 42);
+  const negativa = serie("negat", 10, 28);
+  return [
+    { nombre: "Afirmativa", valores: afirmativa },
+    { nombre: "Negativa", valores: negativa },
+    { nombre: "Sin respuesta", valores: afirmativa.map((a, i) => 100 - a - negativa[i]) },
+  ];
+}
+
 function construirDatos(series: { nombre: string; valores: number[] }[]) {
   return PERIODOS.map((periodo, i) => {
     const fila: Record<string, string | number> = { periodo };
@@ -80,11 +92,7 @@ const INDICADORES: Record<
     unidad: "%",
     etiquetaFiltro: "Tipo de respuesta",
     opciones: ["Todas", "Afirmativa", "Negativa", "Sin respuesta"],
-    series: [
-      { nombre: "Afirmativa", valores: serie("afirm", 18, 42) },
-      { nombre: "Negativa", valores: serie("negat", 10, 28) },
-      { nombre: "Sin respuesta", valores: serie("sinresp", 30, 60) },
-    ],
+    series: seriesDeRespuestas(),
   },
 };
 
@@ -228,7 +236,9 @@ export function Graficos() {
                         {s.nombre}
                       </th>
                     ))}
-                    <th className="px-3 py-2 text-right font-semibold text-foreground">Total</th>
+                    <th className="px-3 py-2 text-right font-semibold text-foreground">
+                      {cfg.unidad === "%" ? "Suma" : "Total"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -260,7 +270,10 @@ export function Graficos() {
               <LineChart data={datos}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="periodo" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+                <YAxis
+                  domain={cfg.unidad === "%" ? [0, 100] : undefined}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                />
                 <Tooltip {...TOOLTIP_STYLE} />
                 <Legend />
                 {cfg.series.map((s, i) => (
@@ -282,7 +295,10 @@ export function Graficos() {
               <BarChart data={datos}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="periodo" tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
-                <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 12 }} />
+                <YAxis
+                  domain={cfg.unidad === "%" ? [0, 100] : undefined}
+                  tick={{ fill: "var(--muted-foreground)", fontSize: 12 }}
+                />
                 <Tooltip {...TOOLTIP_STYLE} />
                 <Legend />
                 {cfg.series.map((s, i) => (
