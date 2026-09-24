@@ -91,7 +91,6 @@ export function EntregaCobranza() {
       plantillaMensaje: plantillaDe(envio.plantillaCodigo)?.mensaje,
       tipoCobranza: servicio?.tipoCobranza || "—",
       tipoMoroso: tipoMorosoDe(deuda.diasMora),
-      medio: envio.medio,
       sponsorNombre: sponsor?.razonSocial || "—",
       saldo: deuda.saldo,
       diasMora: deuda.diasMora,
@@ -143,8 +142,7 @@ export function EntregaCobranza() {
                   render: (i: EnvioCobranza) => estrategiaDe(i.estrategiaCodigo)?.nombre || i.estrategiaCodigo,
                 },
                 { key: "canalIds", label: "Canal(es)", render: (i: EnvioCobranza) => formatListaCanales(i.canalIds, canales) },
-                { key: "operador", label: "Autómata" },
-                { key: "medio", label: "Medio", render: (i: EnvioCobranza) => i.medio || "—" },
+                { key: "operador", label: "Operador" },
                 {
                   key: "plantillaCodigo", label: "Mensaje",
                   render: (i: EnvioCobranza) => plantillaDe(i.plantillaCodigo)?.nombre || "—",

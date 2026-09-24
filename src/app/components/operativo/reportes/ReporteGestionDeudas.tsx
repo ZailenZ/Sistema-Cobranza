@@ -170,7 +170,6 @@ export function ReporteGestionDeudas() {
       envio,
       deudorNombre: deudor.nombre,
       canalesTexto: formatListaCanales(envio.canalIds, canales),
-      medio: envio.medio,
       plantillaNombre: plantillaNombre(envio.plantillaCodigo),
       plantillaMensaje: plantillaMensaje(envio.plantillaCodigo),
       tipoCobranza: servicio?.tipoCobranza || "—",

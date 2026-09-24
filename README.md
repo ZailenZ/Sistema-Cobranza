@@ -58,12 +58,9 @@ El menú lateral se filtra según el perfil activo. Perfiles disponibles:
     - **Catálogo de estrategias**: cómo se hostiga a un moroso — canal(es) + tipo
       de mensaje + duración + tarifa. La estrategia no declara a qué tipo de
       cobranza pertenece: esa relación la define el catálogo de servicio.
-    - **Catálogo de autómata**: el robot que arma el mensaje de cada canal y su
-      capacidad máxima por día (el mínimo siempre es 0). El autómata **no entrega
-      el mensaje**: lo despacha por un **medio** externo — el operador móvil del
-      moroso (Claro, Movistar, Entel), su proveedor de correo (Gmail, Outlook,
-      iCloud) o, en el caso del autómata de cartas, la notaría, que la hace
-      entregar por un notario.
+    - **Catálogo de autómata**: el robot que envía por cada canal y su capacidad
+      máxima por día (el mínimo siempre es 0). La carta notarial la entrega un
+      **notario**, no un robot.
     Cada uno con estados vacío/lista/edición y las seis acciones: listar, buscar,
     ver detalle, agregar, modificar, eliminar. Cada catálogo incluye un registro de
     ejemplo desactivado, para mostrar que se puede dar de baja sin eliminarlo.

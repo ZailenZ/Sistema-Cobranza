@@ -9,7 +9,7 @@ const STORAGE_PREFIX = "swcobranza:";
 // navegador de un usuario que abrió una versión anterior del prototipo nunca
 // se migran solos; sin este chequeo, una pantalla nueva que espere un campo
 // que no existía (p. ej. Servicio.saldoMin) rompe al leer datos con la forma vieja.
-const SCHEMA_VERSION = 12;
+const SCHEMA_VERSION = 11;
 const SCHEMA_VERSION_KEY = `${STORAGE_PREFIX}schemaVersion`;
 
 /** Si el esquema de catálogos/entidades cambió, limpia los datos simulados persistidos
@@ -169,10 +169,7 @@ export type EnvioCobranza = {
   estrategiaCodigo: string; // catálogo estrategias
   canalIds: string[]; // canales de la estrategia (catálogo canales)
   automataCodigo?: string; // catálogo automata (vacío si ningún canal tiene autómata)
-  operador: string;
-  /** Medio externo por el que el autómata hizo llegar el mensaje: el operador móvil
-   *  del moroso, su proveedor de correo o la notaría. El autómata no entrega: despacha. */
-  medio?: string;
+  operador: string; // etiqueta simulada del autómata que envió, p. ej. "SMS1"
   plantillaCodigo?: string; // tipo de mensaje enviado (catálogo plantillas)
   tarifa: number; // costo cobrado al sponsor por ejecutar la estrategia
   respuesta: RespuestaEnvio;

@@ -130,21 +130,6 @@ export function recomendarEstrategia(
   return disponibles[Math.round(intensidad * (disponibles.length - 1))];
 }
 
-/** Medio externo por el que el autómata despacha en cada canal. El autómata arma el
- *  mensaje desde la plantilla, pero quien lo hace llegar (y trae la respuesta) es este
- *  medio: el operador móvil del moroso, su proveedor de correo o la notaría. */
-export function medioParaCanal(canalNombre: string): string {
-  const clave = canalNombre.toLowerCase();
-  const movil = ["Claro", "Movistar", "Entel"];
-  if (clave.includes("sms")) return randomPick(movil)!;
-  if (clave.includes("llamada")) return randomPick(movil)!;
-  if (clave.includes("whatsapp")) return "WhatsApp";
-  if (clave.includes("correo")) return randomPick(["Gmail", "Outlook", "iCloud Mail"])!;
-  if (clave.includes("notarial")) return "Notaría (entrega el notario)";
-  if (clave.includes("telegram")) return "Telegram";
-  return "—";
-}
-
 /** Resuelve el autómata del catálogo que corresponde a un nombre de canal (por palabra clave). */
 export function automataParaCanal(canalNombre: string, automatas: AutomataCatalogo[]): AutomataCatalogo | undefined {
   const clave = canalNombre.toLowerCase();
@@ -152,7 +137,7 @@ export function automataParaCanal(canalNombre: string, automatas: AutomataCatalo
   if (clave.includes("whatsapp")) return automatas.find((a) => a.nombre.toLowerCase().includes("whatsapp"));
   if (clave.includes("correo")) return automatas.find((a) => a.nombre.toLowerCase().includes("correo"));
   if (clave.includes("llamada")) return automatas.find((a) => a.nombre.toLowerCase().includes("llamada"));
-  if (clave.includes("notarial")) return automatas.find((a) => a.nombre.toLowerCase().includes("carta"));
+  if (clave.includes("notarial")) return automatas.find((a) => a.nombre.toLowerCase().includes("notario"));
   return undefined;
 }
 
@@ -314,8 +299,7 @@ export function aplicarEstrategia(ticketId: string, estrategiaCodigo: string): E
     estrategiaCodigo: estrategia.codigo,
     canalIds: [...estrategia.canalCodigos],
     automataCodigo: automata?.codigo,
-    operador: automata ? `${automata.nombre} #${operadorContador++}` : "Sin autómata asignado",
-    medio: canalPrincipal ? medioParaCanal(canalPrincipal.nombre) : undefined,
+    operador: automata ? `${canalPrincipal?.nombre}${operadorContador++}` : "Notificación física",
     plantillaCodigo: plantilla?.codigo,
     tarifa: estrategia.tarifa,
     respuesta: randomRespuesta(),
